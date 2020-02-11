@@ -17,7 +17,7 @@ mesh = pyff.FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
 
 mesh.plot_triangles( labels = True )
 mesh.plot_nodes()
-mesh.plot_boundaries( color = 'red')
+mesh.plot_boundaries( labels = True, color = 'red')
 
 pp.axis('equal')
 pp.axis('off')
