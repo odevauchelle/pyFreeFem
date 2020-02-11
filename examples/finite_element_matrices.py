@@ -17,7 +17,10 @@ Vh u,v;
 '''
 
 edp_str += pyff.export_matrix_edp( **pyff.stiffness )
+
 FreeFem_output = pyff.run_FreeFem( edp_str )
+
+print(FreeFem_output)
 
 stiffness_matrix = pyff.FreeFem_str_to_matrix( FreeFem_output, FE_matrix['matrix_name'] )
 print(stiffness_matrix)

@@ -83,10 +83,11 @@ def export_mesh_edp( **kwargs ) :
 def export_matrix_edp( **kwargs ) :
 
     edp_str = '''
-    varf Vmatrix_name( func, test_func ) = variational_formulation ;
+    varf Vmatrix_name( base_func, test_func ) = variational_formulation ;
     matrix Mmatrix_name = Vmatrix_name( Vh, Vh ) ;
-    Mmatrix_name.resize( func[].n, func[].n );
+    Mmatrix_name.resize( base_func[].n, base_func[].n );
     '''
+
     edp_str += add_flags('''
     cout << Mmatrix_name;
     ''', 'MATRIX ' + 'matrix_name' )
@@ -104,14 +105,14 @@ def export_matrix_edp( **kwargs ) :
 
 stiffness = dict(
     matrix_name = 'stiffness',
-    func = 'u',
+    base_func = 'u',
     test_func = 'v',
     variational_formulation = 'int2d( Th )( dx(u)*dx(v) + dy(u)*dy(v) )'
     )
 
 Grammian = dict(
     matrix_name = 'Grammian',
-    func = 'u',
+    base_func = 'u',
     test_func = 'v',
     variational_formulation = 'int2d( Th )( u*v )'
     )
@@ -122,7 +123,7 @@ def boundary_Neumann( *boundary_label ) :
 
     return dict(
         matrix_name = 'NeumannB' + 'B'.join(boundary_label),
-        func = 'u',
+        base_func = 'u',
         test_func = 'v',
         variational_formulation = 'int1d( Th, ' + ', '.join(boundary_label) + ' )( N.x*dx(u)*v + N.y*dy(u)*v )'
         )
@@ -133,7 +134,7 @@ def boundary_Grammian( *boundary_label ) :
 
     return dict(
         matrix_name = 'GrammianB' + 'B'.join(boundary_label),
-        func = 'u',
+        base_func = 'u',
         test_func = 'v',
         variational_formulation = 'int1d( Th, ' + ', '.join(boundary_label) + ' )( u*v + u*v )'
         )
