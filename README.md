@@ -154,10 +154,6 @@ Here is the result.
 
 ![Mesh with a hole](./figures/solve_2.svg)
 
-## Known issues
-
-Running FreeFem++ with FreeFemIO.run_FreeFem yields erratic results, perhaps because of the shell buffer.
-
 ## To do
 
 - Add more predefined matrices in FreeFemStatics, including projection matrices to P1 finite element space.
