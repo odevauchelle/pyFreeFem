@@ -157,5 +157,5 @@ Here is the result.
 ## To do
 
 - Add more predefined matrices in FreeFemStatics, including projection matrices to P1 finite element space.
-- Export mesh to FreeFem++
+- Export mesh to FreeFem++ without writing in file
 - Translate adaptmesh in FreeFemStatics

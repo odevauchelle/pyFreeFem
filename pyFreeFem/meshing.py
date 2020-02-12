@@ -29,6 +29,8 @@ from pylab import gca, mean
 class Boundary :
     '''
     A boundary for FreeFem++, that is, a labelled list of segments.
+    A segment is a list of egdes.
+    An edge is a list ot two vertex indices.
     '''
 
     def __init__( self, segments, label = None ) :
@@ -43,10 +45,10 @@ class Boundary :
 
         for segment in self.segments :
 
-            for piece in segment :
+            for edge in segment :
 
-                x = mesh.x[ piece ]
-                y = mesh.y[ piece ]
+                x = mesh.x[ edge ]
+                y = mesh.y[ edge ]
 
                 color = ax.plot( x, y, **kwargs )[0].get_color()
 
@@ -146,16 +148,84 @@ class TriMesh( mptri.Triangulation ) :
 
             boundary.plot( self, ax = ax, color = color, labels = labels )
 
+    def get_integer_boundary_labels( self ) :
+        '''
+        Returns a list of integer labels. Useful for FreeFem++, which cannot load string labels.
+        '''
+
+        int_labels = [0]
+
+        for boundary in self.boundaries :
+
+            try :
+                int_labels += [ int( boundary.label ) ]
+            except :
+                int_labels += [ max( int_labels ) + 1 ]
+
+        return int_labels[1:]
+
+
+    def get_boundary_edges( self, integer_label = True ):
+        '''
+        Returns a list of labelled egdes. These make up the boundaries.
+        An edge is [ index_vertex_1, index_vertex_2, boundary_label ]
+        '''
+
+        edges = []
+
+        for nb, boundary in enumerate( self.boundaries ) :
+
+            if integer_label :
+                label = self.get_integer_boundary_labels()[nb]
+            else :
+                label = boundary.label
+
+            for segment in boundary.segments :
+                for edge in segment :
+                    edges += [ edge + [ label ] ]
+
+        return edges
+
+    def save( self, filename ) :
+        '''
+        Saves mesh in FreeFem++ format in a .msh file.
+        '''
+
+        with open( filename, 'w' ) as the_file :
+
+            # nv, nt, ne
+            the_file.write( str( [ len(self.x), len( self.triangles ), len( self.get_boundary_edges() ) ] )[1:-1].replace(',',' ') + '\n' )
+
+            # vertices
+            for node_index in range( len( self.x ) ) :
+                the_file.write( str( self.x[node_index] ) + ' ' + str( self.y[node_index] ) + ' ' + str( self.node_labels[node_index] ) + '\n' )
+
+            # triangles
+            for tri_index, triangle in enumerate( self.triangles ) :
+                the_file.write( str( list( array( triangle ) + 1 ) )[1:-1].replace(',',' ') + ' ' + str( self.triangle_labels[tri_index] ) + '\n' )
+            # edges
+            for edge in self.get_boundary_edges() :
+                the_file.write( str( list( array( edge ) + 1 ) )[1:-1].replace(',',' ') + '\n' )
+
+        return filename
+
 if __name__ == '__main__' :
 
     from pylab import *
 
     x = rand(15)
     y = rand( len(x) )
+    boundaries = [ Boundary( [[[1,2]]], label = 'bound' ), Boundary( [[[4,5]]], label = '3' ) ]
 
-    the_mesh = TriMesh( x, y )
+    mesh = TriMesh( x, y, boundaries = boundaries )
 
-    the_mesh.plot_triangles( labels = True )
-    the_mesh.plot_nodes()
+    mesh.plot_triangles( labels = True )
+    mesh.plot_nodes()
+    mesh.plot_boundaries( labels = True, color = 'red' )
+
+    print(mesh.get_boundary_edges())
+
+    print( mesh.save('../sandbox/mesh.msh') )
+
 
     show()
