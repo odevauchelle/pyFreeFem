@@ -28,7 +28,7 @@ import re
 import csv
 import subprocess
 from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import spsolve
+from tempfile import NamedTemporaryFile
 
 from .meshing import TriMesh, Boundary
 from .FreeFemStatics import *
@@ -272,6 +272,7 @@ def run_FreeFem( edp_str ) :
 if __name__ == '__main__' :
 
     from pylab import *
+    from scipy.sparse.linalg import spsolve
 
     edp_str = '''
     real smallRadius = .3;
