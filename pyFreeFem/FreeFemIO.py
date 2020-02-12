@@ -75,9 +75,11 @@ def FreeFem_str_to_mesh( FreeFem_str, simple_boundaries = True ) :
     x, y, node_labels = FreeFem_mesh['nodes'].T
     node_labels = list( map( lambda x: int(x), node_labels ) )
 
-    triangles = FreeFem_mesh['triangles'][:,:-1]
+    triangles = FreeFem_mesh['triangles'][:,:-1] - 0
     triangle_labels = FreeFem_mesh['triangles'][:,-1]
 
+
+    FreeFem_mesh['boundaries'] = FreeFem_mesh['boundaries'] + np.array( [ [-0]*len( FreeFem_mesh['boundaries'] ) ]*2 + [ [0]*len( FreeFem_mesh['boundaries'] ) ] ).T
     boundaries = FreeFem_to_boundaries( FreeFem_mesh['boundaries'] )
 
     mesh = TriMesh(
@@ -113,8 +115,8 @@ def find_disjunctions( seg_list ) :
 
     '''
 
-    if seg_list is [] :
-        return []
+    if len( seg_list ) < 2 :
+        return seg_list
 
     else :
         return ( seg_list[ 1:-1, 0 ] - seg_list[ 0:-2, 1 ] ).nonzero()[0] + 1
@@ -247,25 +249,17 @@ def run_FreeFem( edp_str ) :
 
     command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
 
-    # output = subprocess.check_output( [command], shell = True, stderr=subprocess.STDOUT, executable="/bin/bash", bufsize = 4096 )
-    #
-    # return output.decode('utf-8')
-    #
-    # subprocess.run( ['stdbuf', '-o0', '&&'], shell = True )
-    # output = subprocess.run( [command], stdout=subprocess.PIPE, shell = True, executable="/bin/bash" )
-    # return output.stdout.decode('utf-8')
-
-    #
-    # proc = Popen(['stdbuf', '-o0']
-
-    with subprocess.Popen( [command], stdout = subprocess.PIPE, shell = True, executable="/bin/bash", bufsize = 0 ) as proc :
+    with subprocess.Popen( [command], stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
 
         output, error = proc.communicate()
 
+        if not error is b'':
+            print('FreeFem++ Error')
+            print('---------------')
+            print(error)
+            print('---------------')
+
         return output.decode('utf-8')
-        proc.wait()
-        proc.stdout.flush()
-        # proc.kill()
 
 
 

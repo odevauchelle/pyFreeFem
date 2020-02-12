@@ -24,7 +24,7 @@
 # G. Seizilles, E. Lajeunesse, Physical Review Letters, 123, 014501, 2019
 
 import matplotlib.tri as mptri
-from pylab import gca, mean
+from pylab import gca, mean, array
 
 class Boundary :
     '''
@@ -103,7 +103,7 @@ class TriMesh( mptri.Triangulation ) :
         else :
             self.boundaries = boundaries
 
-    def plot_triangles( self, ax = None, labels = False, **kwargs ) :
+    def plot_triangles( self, ax = None, labels = False, indices = False, **kwargs ) :
         '''
         Plot mesh structure.
         '''
@@ -113,15 +113,18 @@ class TriMesh( mptri.Triangulation ) :
 
         triangles_plot =  ax.triplot( self.x, self.y, triangles = self.triangles, **kwargs )
 
-        if labels :
+        if labels or indices :
 
             for i, triangle in enumerate( self.triangles ) :
                 x, y = mean( self.x[triangle] ), mean( self.y[triangle] )
-                ax.text( x, y , self.triangle_labels[i], va = 'center', ha = 'center', color =  triangles_plot[0].get_color() )
+                if labels :
+                    ax.text( x, y , self.triangle_labels[i], va = 'center', ha = 'center', color =  triangles_plot[0].get_color() )
+                if indices :
+                    ax.text( x, y , i, va = 'center', ha = 'center', color =  triangles_plot[0].get_color() )
 
         return triangles_plot
 
-    def plot_nodes( self, ax = None, color = 'tab:blue' ) :
+    def plot_nodes( self, ax = None, labels = False, indices = False, color = 'tab:blue' ) :
         '''
         Plot mesh nodes with labels.
         '''
@@ -131,7 +134,12 @@ class TriMesh( mptri.Triangulation ) :
 
         for i in range( len( self.x ) ) :
             ax.plot( self.x[i], self.y[i], 'o', ms = 10, color = color )
-            ax.text( self.x[i], self.y[i], self.node_labels[i], va = 'center', ha = 'center', color = 'w' )
+
+            if labels :
+                ax.text( self.x[i], self.y[i], self.node_labels[i], va = 'center', ha = 'center', color = 'w' )
+
+            if indices :
+                ax.text( self.x[i], self.y[i], i, va = 'center', ha = 'center', color = 'w' )
 
     def plot_boundaries( self, ax = None, labels = False, **kwargs ) :
 
@@ -182,7 +190,7 @@ class TriMesh( mptri.Triangulation ) :
 
             for segment in boundary.segments :
                 for edge in segment :
-                    edges += [ edge + [ label ] ]
+                    edges += [ list(edge) + [ label ] ]
 
         return edges
 
@@ -203,9 +211,10 @@ class TriMesh( mptri.Triangulation ) :
             # triangles
             for tri_index, triangle in enumerate( self.triangles ) :
                 the_file.write( str( list( array( triangle ) + 1 ) )[1:-1].replace(',',' ') + ' ' + str( self.triangle_labels[tri_index] ) + '\n' )
+
             # edges
             for edge in self.get_boundary_edges() :
-                the_file.write( str( list( array( edge ) + 1 ) )[1:-1].replace(',',' ') + '\n' )
+                the_file.write( str( list( array( edge ) + array( [1,1,0] ) ) )[1:-1].replace(',',' ') + '\n' )
 
         return filename
 
