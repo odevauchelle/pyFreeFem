@@ -23,38 +23,35 @@
 # Boltzmann Distribution of Sediment Transport, A. Abramian, O. Devauchelle,
 # G. Seizilles, E. Lajeunesse, Physical Review Letters, 123, 014501, 2019
 
+
+
 import matplotlib.tri as mptri
 from pylab import gca, mean, array
 
-class Boundary :
-    '''
-    A boundary for FreeFem++, that is, a labelled list of segments.
-    A segment is a list of egdes.
-    An edge is a list ot two vertex indices.
-    '''
+TriMesh_structure ='''
+TriMesh attributes:
 
-    def __init__( self, segments, label = None ) :
+    - Nodes coordinates (from Triangulation)
+    - Oriented triangles (from Triangulation)
+    - Nodes labels (list)
+    - Triangle labels (list)
 
-        self.segments = segments
-        self.label = label
+    - Oriented edges with labels (dict)
 
-    def plot( self, mesh, ax = None, labels = True, **kwargs ) :
+        - Triangle index
+        - Node index (0,1 or 2)
+        - Label
 
-        if ax is None :
-            ax = gca()
+TriMesh inner classes:
 
-        for segment in self.segments :
+    - Boundary
 
-            for edge in segment :
+    Boundary attributes:
 
-                x = mesh.x[ edge ]
-                y = mesh.y[ edge ]
-
-                color = ax.plot( x, y, **kwargs )[0].get_color()
-
-                if labels :
-                    ax.plot( mean(x), mean(y), 'ow', ms = 11 )#, mec = color )
-                    ax.text( mean(x), mean(y), str(self.label), va = 'center', ha = 'center', color = color )
+        - Label (that of edges)
+        - List of segments
+            - oriented list of nodes (connected by edges)
+'''
 
 class TriMesh( mptri.Triangulation ) :
 
@@ -66,7 +63,7 @@ class TriMesh( mptri.Triangulation ) :
         Import and export from and to FreeFem mesh.
     '''
 
-    def __init__( self, x, y, triangles = None, node_labels = None, triangle_labels = None, boundaries = None ) :
+    def __init__( self, x, y, triangles = None, boundary_edges = None, node_labels = None, triangle_labels = None ) :
 
         '''
         Create a triangular mesh suited for FreeFem++.
@@ -78,145 +75,84 @@ class TriMesh( mptri.Triangulation ) :
             Nodes coordinates
         triangles : 3*n list of integers, optional
             Triangles indices
-        labels : 1*n list ( str, int, etc. ), optional
-            Nodes labels. Inner nodes are labelled "0" in FreeFem++. Default is 0.
-        boundaries : list of Boundary objects, optional
-            A boundary for FreeFem++, that is, a list of node indices.
-            This list is ordered, and therefore oriented.
-            Each of its its segments should belong to a triangle, although this is not enforced a priori.
         '''
 
         super( TriMesh, self ).__init__( x, y, triangles )
 
+
         if node_labels is None :
-            self.node_labels = [0]*len( self.x )
-        else :
-            self.node_labels = node_labels
+            node_labels = [0]*len( self.x )
+
+        self.node_labels = node_labels
 
         if triangle_labels is None :
-            self.triangle_labels = [0]*len( self.triangles )
-        else :
-            self.triangle_labels = triangle_labels
+            triangle_labels = [0]*len( self.triangles )
 
-        if boundaries is None :
-            self.boundaries = []
-        else :
-            self.boundaries = boundaries
+        self.triangle_labels = triangle_labels
 
-    def plot_triangles( self, ax = None, labels = False, indices = False, **kwargs ) :
-        '''
-        Plot mesh structure.
-        '''
+        if boundary_edges is None :
+            boundary_edges = {}
+
+        self.boundary_edges = boundary_edges
+
+    def plot_triangles( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
             ax = gca()
 
-        triangles_plot =  ax.triplot( self.x, self.y, triangles = self.triangles, **kwargs )
+        triangles_plot = ax.triplot( self, **kwargs )
 
-        if labels or indices :
+        label_style = dict(va = 'center', ha = 'center', color =  triangles_plot[0].get_color())
+
+        if not labels is None :
 
             for i, triangle in enumerate( self.triangles ) :
+
                 x, y = mean( self.x[triangle] ), mean( self.y[triangle] )
-                if labels :
-                    ax.text( x, y , self.triangle_labels[i], va = 'center', ha = 'center', color =  triangles_plot[0].get_color() )
-                if indices :
-                    ax.text( x, y , i, va = 'center', ha = 'center', color =  triangles_plot[0].get_color() )
+
+                if labels is 'label' :
+                    ax.text( x, y , self.triangle_labels[i], **label_style )
+
+                elif labels is 'index' :
+                    ax.text( x, y , i, **label_style )
 
         return triangles_plot
 
-    def plot_nodes( self, ax = None, labels = False, indices = False, color = 'tab:blue' ) :
-        '''
-        Plot mesh nodes with labels.
-        '''
+    def plot_nodes( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
             ax = gca()
 
-        for i in range( len( self.x ) ) :
-            ax.plot( self.x[i], self.y[i], 'o', ms = 10, color = color )
+        nodes_plot_style = dict( marker = 'o', linestyle = 'None', ms = 12 )
+        nodes_plot_style.update( kwargs )
 
-            if labels :
-                ax.text( self.x[i], self.y[i], self.node_labels[i], va = 'center', ha = 'center', color = 'w' )
+        nodes_plot = ax.plot( self.x, self.y, **nodes_plot_style )
 
-            if indices :
-                ax.text( self.x[i], self.y[i], i, va = 'center', ha = 'center', color = 'w' )
+        if not labels is None :
 
-    def plot_boundaries( self, ax = None, labels = False, **kwargs ) :
+            label_style = dict(va = 'center', ha = 'center', color = 'w')
 
-        '''
-        Plot meshboundaries with labels.
-        '''
+            for i in range( len( self.x ) ) :
+
+                if labels is 'label' :
+                    ax.text( self.x[i], self.y[i], self.node_labels[i], **label_style )
+
+                elif labels is 'index' :
+                    ax.text( self.x[i], self.y[i], i, **label_style )
+
+        return nodes_plot
+
+    def plot_edges( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
             ax = gca()
 
-        for boundary in self.boundaries :
+        for key in self.edges.keys() :
 
-            color = ax.plot( [], [], **kwargs )[0].get_color()
+            nodes = 
 
-            boundary.plot( self, ax = ax, color = color, labels = labels )
+            nodes_plot = ax.plot( self.x, self.y, **nodes_plot_style )
 
-    def get_integer_boundary_labels( self ) :
-        '''
-        Returns a list of integer labels. Useful for FreeFem++, which cannot load string labels.
-        '''
-
-        int_labels = [0]
-
-        for boundary in self.boundaries :
-
-            try :
-                int_labels += [ int( boundary.label ) ]
-            except :
-                int_labels += [ max( int_labels ) + 1 ]
-
-        return int_labels[1:]
-
-
-    def get_boundary_edges( self, integer_label = True ):
-        '''
-        Returns a list of labelled egdes. These make up the boundaries.
-        An edge is [ index_vertex_1, index_vertex_2, boundary_label ]
-        '''
-
-        edges = []
-
-        for nb, boundary in enumerate( self.boundaries ) :
-
-            if integer_label :
-                label = self.get_integer_boundary_labels()[nb]
-            else :
-                label = boundary.label
-
-            for segment in boundary.segments :
-                for edge in segment :
-                    edges += [ list(edge) + [ label ] ]
-
-        return edges
-
-    def save( self, filename ) :
-        '''
-        Saves mesh in FreeFem++ format in a .msh file.
-        '''
-
-        with open( filename, 'w' ) as the_file :
-
-            # nv, nt, ne
-            the_file.write( str( [ len(self.x), len( self.triangles ), len( self.get_boundary_edges() ) ] )[1:-1].replace(',',' ') + '\n' )
-
-            # vertices
-            for node_index in range( len( self.x ) ) :
-                the_file.write( str( self.x[node_index] ) + ' ' + str( self.y[node_index] ) + ' ' + str( self.node_labels[node_index] ) + '\n' )
-
-            # triangles
-            for tri_index, triangle in enumerate( self.triangles ) :
-                the_file.write( str( list( array( triangle ) + 1 ) )[1:-1].replace(',',' ') + ' ' + str( self.triangle_labels[tri_index] ) + '\n' )
-
-            # edges
-            for edge in self.get_boundary_edges() :
-                the_file.write( str( list( array( edge ) + array( [1,1,0] ) ) )[1:-1].replace(',',' ') + '\n' )
-
-        return filename
 
 if __name__ == '__main__' :
 
@@ -224,17 +160,13 @@ if __name__ == '__main__' :
 
     x = rand(15)
     y = rand( len(x) )
-    boundaries = [ Boundary( [[[1,2]]], label = 'bound' ), Boundary( [[[4,5]]], label = '3' ) ]
 
-    mesh = TriMesh( x, y, boundaries = boundaries )
+    boundary_edges = { ( 0, 0 ) : 'B'  }
 
-    mesh.plot_triangles( labels = True )
-    mesh.plot_nodes()
-    mesh.plot_boundaries( labels = True, color = 'red' )
+    mesh = TriMesh( x, y, boundary_edges = boundary_edges )
 
-    print(mesh.get_boundary_edges())
 
-    print( mesh.save('../sandbox/mesh.msh') )
-
+    color = mesh.plot_triangles( labels = 'index' )[0].get_color()
+    mesh.plot_nodes( labels = 'index', color = color )
 
     show()
