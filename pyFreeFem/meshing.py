@@ -147,11 +147,20 @@ class TriMesh( mptri.Triangulation ) :
         if ax is None :
             ax = gca()
 
-        for key in self.edges.keys() :
+        for key in self.boundary_edges.keys() :
 
-            nodes = 
+            tri_index, node_index = key
 
-            nodes_plot = ax.plot( self.x, self.y, **nodes_plot_style )
+            node_indices = self.triangles[ tri_index ][ [ node_index, node_index + 1 ] ]
+
+            x, y = self.x[node_indices], self.y[node_indices]
+
+            edge_plot = ax.plot( x, y, **kwargs )
+
+            if labels is 'label' :
+                label_style = dict(va = 'center', ha = 'center', color = edge_plot[0].get_color() )
+                ax.plot( mean(x), mean(y), 'ow', ms = 12 )
+                ax.text( mean(x), mean(y), self.boundary_edges[key], **label_style )
 
 
 if __name__ == '__main__' :
@@ -161,12 +170,13 @@ if __name__ == '__main__' :
     x = rand(15)
     y = rand( len(x) )
 
-    boundary_edges = { ( 0, 0 ) : 'B'  }
+    boundary_edges = { ( 3, 0 ) : 'B',  ( 3, 1 ) : 'C' }
 
     mesh = TriMesh( x, y, boundary_edges = boundary_edges )
 
 
     color = mesh.plot_triangles( labels = 'index' )[0].get_color()
     mesh.plot_nodes( labels = 'index', color = color )
+    mesh.plot_edges( labels = 'label', color = 'red' )
 
     show()
