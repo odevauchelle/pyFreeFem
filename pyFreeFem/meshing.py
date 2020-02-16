@@ -151,7 +151,12 @@ class TriMesh( mptri.Triangulation ) :
 
             tri_index, node_index = key
 
-            node_indices = self.triangles[ tri_index ][ [ node_index, node_index + 1 ] ]
+            end_node_index = node_index + 1
+
+            if end_node_index == 3 :
+                end_node_index = 0
+
+            node_indices = self.triangles[ tri_index ][ [ node_index, end_node_index ] ]
 
             x, y = self.x[node_indices], self.y[node_indices]
 
@@ -167,12 +172,14 @@ if __name__ == '__main__' :
 
     from pylab import *
 
-    x = rand(15)
-    y = rand( len(x) )
+    x = array([1,5,6,3,4])
+    y = array([1,4,7,3,0])
 
     boundary_edges = { ( 3, 0 ) : 'B',  ( 3, 1 ) : 'C' }
 
     mesh = TriMesh( x, y, boundary_edges = boundary_edges )
+
+
 
 
     color = mesh.plot_triangles( labels = 'index' )[0].get_color()

@@ -30,7 +30,7 @@ import subprocess
 from scipy.sparse import csr_matrix
 from tempfile import NamedTemporaryFile
 
-from .meshing import TriMesh, Boundary
+from .meshing import TriMesh
 from .FreeFemStatics import *
 
 def FreeFem_str_to_matrix( FreeFem_str, matrix_name, raw = False ) :
@@ -75,19 +75,20 @@ def FreeFem_str_to_mesh( FreeFem_str, simple_boundaries = True ) :
     x, y, node_labels = FreeFem_mesh['nodes'].T
     node_labels = list( map( lambda x: int(x), node_labels ) )
 
-    triangles = FreeFem_mesh['triangles'][:,:-1] - 0
+    triangles = FreeFem_mesh['triangles'][:,:-1]
     triangle_labels = FreeFem_mesh['triangles'][:,-1]
 
+    boundary_edges = {}
 
-    FreeFem_mesh['boundaries'] = FreeFem_mesh['boundaries'] + np.array( [ [-0]*len( FreeFem_mesh['boundaries'] ) ]*2 + [ [0]*len( FreeFem_mesh['boundaries'] ) ] ).T
-    boundaries = FreeFem_to_boundaries( FreeFem_mesh['boundaries'] )
+    for edge in FreeFem_mesh['boundaries'] :
+        boundary_edges.update( FreeFem_edge_to_boundary_edge( edge, triangles ) )
 
     mesh = TriMesh(
         x, y,
         triangles = triangles,
         node_labels = node_labels,
         triangle_labels = triangle_labels,
-        boundaries = boundaries
+        boundary_edges = boundary_edges
         )
 
     return mesh
@@ -190,23 +191,47 @@ def reorder_boundary( seg_list ) :
 
     return seg_list
 
-def FreeFem_to_boundaries( seg_list, reorder = True ) :
-    '''
-    Turns a list of labelled segments into a list of boundaries.
-    '''
+# def FreeFem_to_boundaries( seg_list, reorder = True ) :
+#     '''
+#     Turns a list of labelled segments into a list of boundaries.
+#     '''
+#
+#     boundaries = []
+#
+#     for label in set( seg_list[:,2] ) :
+#
+#         segments = seg_list[ np.where( seg_list[:,2] == label ), :2 ]
+#
+#         if reorder :
+#             segments = reorder_boundary( segments )
+#
+#         boundaries += [ Boundary( segments = segments, label = label ) ]
+#
+#     return boundaries
 
-    boundaries = []
+def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
 
-    for label in set( seg_list[:,2] ) :
+    FreeFem_edge = [ FreeFem_edge[0], FreeFem_edge[1], FreeFem_edge[2] ]
 
-        segments = seg_list[ np.where( seg_list[:,2] == label ), :2 ]
+    triangle_index = None
 
-        if reorder :
-            segments = reorder_boundary( segments )
+    for nodes_order in [ [0,1], [1,2], [-1,0] ] :
+        try :
+            triangle_index = triangles[ :, nodes_order].tolist().index( FreeFem_edge[:2] )
+            break
+        except :
+            pass
 
-        boundaries += [ Boundary( segments = segments, label = label ) ]
+    if triangle_index is None :
 
-    return boundaries
+        print('Could not find boundary edge ' + str(FreeFem_edge) + ' in mesh.')
+        return {}
+
+    else :
+
+        node_index_in_triangle = triangles[triangle_index].tolist().index( FreeFem_edge[0] )
+        return { ( triangle_index, node_index_in_triangle ) : FreeFem_edge[-1]  }
+
 
 def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
 
@@ -260,6 +285,8 @@ def run_FreeFem( edp_str ) :
             print('---------------')
 
         return output.decode('utf-8')
+
+
 
 
 
