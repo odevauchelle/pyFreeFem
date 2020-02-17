@@ -28,6 +28,12 @@
 import matplotlib.tri as mptri
 from pylab import gca, mean, array
 
+if __name__ == '__main__' :
+    from mesh_tools.segments import *
+
+else :
+    from .mesh_tools.segments import *
+
 TriMesh_structure ='''
 TriMesh attributes:
 
@@ -95,6 +101,94 @@ class TriMesh( mptri.Triangulation ) :
 
         self.boundary_edges = boundary_edges
 
+    def get_boundary_label_conversion( self ) :
+        return label_conversion( self.boundary_edges.values() )
+
+    def rename_boundary( self, new_names, verbose = False ) :
+
+        for edge in self.boundary_edges.keys() :
+            try :
+                self.boundary_edges[edge] = new_names[ self.boundary_edges[edge] ]
+            except :
+                if verbose :
+                    print( 'No new name for ' + str( self.boundary_edges[edge] ) )
+                pass
+
+    def get_boundary_edges( self, label_type = 'int', index_type = 'node' ) :
+
+        '''
+        A method to convert boundary segments into an array. Typically:
+        { ( triangle_index, node_index_in_triangle ) : raw_label }
+            -> [ start_node_index, end_node_index, int_label ]
+        '''
+
+        if label_type == 'int' :
+            label_to_int, _ = self.get_boundary_label_conversion()
+
+        edges = []
+
+        for edge in self.boundary_edges.keys() :
+
+            if index_type == 'node' :
+                edge_indices = list( triangle_edge_to_node_edge( edge, self.triangles ) )
+
+            elif index_type == 'triangle' :
+                edge_indices = list( edge )
+
+            if label_type == 'int' :
+                label = label_to_int[ self.boundary_edges[ edge ] ]
+
+            else :
+                label = self.boundary_edges[ edge ]
+
+            edges += [ edge_indices + [ label ] ]
+
+        return edges
+
+    def get_boundaries( self, segment_type = 'node_index' ) :
+
+        '''
+        Boundaries are a dictionnary indexed by label.
+        Each value is a list of segments.
+        Each segment is an oriented list of nodes, or two lists of coordinates
+        '''
+
+        boundaries = {}
+
+        for edge in self.get_boundary_edges( label_type = 'raw' ) :
+
+            label = edge[-1]
+
+            try :
+                edges = boundaries[label]
+            except :
+                edges = []
+
+            edges += [ edge[:-1] ]
+
+            boundaries.update( { label : edges } )
+
+        for label in boundaries.keys() :
+
+            segments = ordered_edges_to_segments( reorder_boundary( boundaries[label] ) )
+
+            if segment_type == 'node_index' :
+                boundaries[label] = segments
+
+            elif segment_type == 'xy' :
+
+                x = []
+                y = []
+
+                for segment in segments :
+                    x += list( self.x[ segment ] ) + [np.nan]
+                    y += list( self.y[ segment ] ) + [np.nan]
+
+                boundaries[label] = [ x[:-1], y[:-1] ]
+
+        return boundaries
+
+
     def plot_triangles( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
@@ -142,21 +236,29 @@ class TriMesh( mptri.Triangulation ) :
 
         return nodes_plot
 
+    def plot_boundaries( self, ax = None, **kwargs ) :
+
+        if ax is None :
+            ax = gca()
+
+        boundaries = self.get_boundaries( segment_type = 'xy' )
+
+        for label in boundaries.keys() :
+
+            boundary_kwargs = { 'label' : label }
+            # print(kwargs)
+            boundary_kwargs.update( kwargs )
+
+            ax.plot( *boundaries[label], **boundary_kwargs )
+
     def plot_edges( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
             ax = gca()
 
-        for key in self.boundary_edges.keys() :
+        for edge in self.boundary_edges.keys() :
 
-            tri_index, node_index = key
-
-            end_node_index = node_index + 1
-
-            if end_node_index == 3 :
-                end_node_index = 0
-
-            node_indices = self.triangles[ tri_index ][ [ node_index, end_node_index ] ]
+            node_indices = list( triangle_edge_to_node_edge( edge, self.triangles ) )
 
             x, y = self.x[node_indices], self.y[node_indices]
 
@@ -165,7 +267,8 @@ class TriMesh( mptri.Triangulation ) :
             if labels is 'label' :
                 label_style = dict(va = 'center', ha = 'center', color = edge_plot[0].get_color() )
                 ax.plot( mean(x), mean(y), 'ow', ms = 12 )
-                ax.text( mean(x), mean(y), self.boundary_edges[key], **label_style )
+                ax.text( mean(x), mean(y), self.boundary_edges[edge], **label_style )
+
 
 
 if __name__ == '__main__' :
@@ -175,15 +278,13 @@ if __name__ == '__main__' :
     x = array([1,5,6,3,4])
     y = array([1,4,7,3,0])
 
-    boundary_edges = { ( 3, 0 ) : 'B',  ( 3, 1 ) : 'C' }
+    boundary_edges = { ( 3, 0 ) : 'B',  ( 3, 1 ) : 'B' }
 
     mesh = TriMesh( x, y, boundary_edges = boundary_edges )
-
-
-
-
     color = mesh.plot_triangles( labels = 'index' )[0].get_color()
     mesh.plot_nodes( labels = 'index', color = color )
     mesh.plot_edges( labels = 'label', color = 'red' )
+
+    print( mesh.get_boundaries( segment_type  = 'xy') )
 
     show()

@@ -30,7 +30,8 @@ import subprocess
 from scipy.sparse import csr_matrix
 from tempfile import NamedTemporaryFile
 
-from .meshing import TriMesh
+from .meshing import TriMesh#, triangle_edge_to_node_edge
+from .mesh_tools.segments import triangle_edge_to_node_edge
 from .FreeFemStatics import *
 
 def FreeFem_str_to_matrix( FreeFem_str, matrix_name, raw = False ) :
@@ -93,103 +94,7 @@ def FreeFem_str_to_mesh( FreeFem_str, simple_boundaries = True ) :
 
     return mesh
 
-######################
 
-def find_disjunctions( seg_list ) :
-    '''
-    Find disjunctions (holes) in a list of segments.
-
-    Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        list of couples of nodes coordinates.
-
-    Returns :
-    ----------
-    disjuctions : numpy.array of indices
-        Indices of the disjunction segments
-
-    Example :
-    ----------
-    disjuctions = find_disjunction( array( [ [1,12], [12,3], [3,7], [4, 14], [14,1] ] ) )
-    >>> [3]
-
-    '''
-
-    if len( seg_list ) < 2 :
-        return seg_list
-
-    else :
-        return ( seg_list[ 1:-1, 0 ] - seg_list[ 0:-2, 1 ] ).nonzero()[0] + 1
-
-def stitch_segment_list( seg_list, n ) :
-
-    '''
-    Cut a segment list at location 'n', finds the next occurence of the end node, and stich the rest of the list there.
-
-    Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        List of couples of nodes coordinates.
-    n : integer
-        Location of the disjuction to be mended.
-
-    Returns :
-    ----------
-    mended_segment_list : numpy.array of indices
-        Indices of the disjunction segments
-    mending : Boolean
-        Whether the list of segment was mended
-
-    Example :
-    ----------
-    stitch_segment_list( array( [ [1,12], [12,3], [7, 14], [3, 7], [14, 1 ] ] ), 2 )
-    >>> (array([[ 1, 12], [12,  3], [ 3,  7], [14,  1], [ 7, 14]]), True)
-    '''
-
-    try :
-        n2 = n + np.where( seg_list [ n:, 0  ] == seg_list[ ( n - 1 ), 1 ] )[0][0]
-        return np.concatenate( ( seg_list[ 0 : n ], seg_list[ n2 : ], seg_list[ n : n2 ] )  ), True
-
-    except :
-        print('No possible reconnection of segment list. Returning initial segment list.')
-        return seg_list, False
-
-def reorder_boundary( seg_list ) :
-    '''
-    Reorder a list of segments until there is no disjunction left, or until the remaining disjunctions cannot be solved.
-
-    Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        List of couples of nodes coordinates.
-
-    Returns :
-    ----------
-    ordered_segment_list : numpy.array of indices
-        List of ordered segments, with the least possible disjuctions
-
-    Example :
-    ----------
-    reorder_boundary( array( [ [1,12], [12,3], [7, 14], [3, 7], [14, 1 ] ] ) )
-    >>> array( [[ 1 12], [12  3], [ 3  7], [ 7 14], [14  1]] )
-    '''
-
-    keep_trying = True
-
-    while keep_trying :
-
-        keep_trying = False
-
-        for disjunction_index in find_disjunctions( seg_list ) :
-
-            seg_list, mending = stitch_segment_list( seg_list, disjunction_index )
-
-            if mending :
-                keep_trying = True
-                break
-
-    return seg_list
 
 # def FreeFem_to_boundaries( seg_list, reorder = True ) :
 #     '''
@@ -210,6 +115,9 @@ def reorder_boundary( seg_list ) :
 #     return boundaries
 
 def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
+    '''
+    ( start_node, end_node, label_integer ) -> { ( triangle_index, triangle_node_index ) : label_integer }
+    '''
 
     FreeFem_edge = [ FreeFem_edge[0], FreeFem_edge[1], FreeFem_edge[2] ]
 
@@ -231,6 +139,54 @@ def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
 
         node_index_in_triangle = triangles[triangle_index].tolist().index( FreeFem_edge[0] )
         return { ( triangle_index, node_index_in_triangle ) : FreeFem_edge[-1]  }
+#
+# def boundary_edges_to_FreeFem_edges( boundary_edges,  ) :
+#     '''
+#     { ( triangle_index, triangle_node_index ) : label } -> ( start_node, end_node, label_integer )
+#     '''
+#
+#     if label_to_int is None :
+#         label_to_int_func = lambda label : int(label)
+#
+#     elif type(label_to_int) is type( {} ) :
+#         label_to_int_func = lambda label : label_to_int[ label ]
+#
+#     else :
+#         label_to_int_func = label_to_int
+#
+#     FreeFem_edges = []
+#
+#     for key in boundary_edges.keys() :
+#
+#         start_node_index, end_node_index = triangle_edge_to_node_edge( key, triangles )
+#
+#         FreeFem_edges += [ [ start_node_index + 1, end_node_index + 1, label_to_int_func( boundary_edges[key] ) ] ]
+#
+#     return np.array( FreeFem_edges )
+
+def savemesh( mesh, filename ) :
+    '''
+    Saves mesh in FreeFem++ format in a .msh file.
+    '''
+
+    with open( filename, 'w' ) as the_file :
+
+        # nv, nt, ne
+        the_file.write( str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] )[1:-1].replace(',',' ') + '\n' )
+
+        # vertices
+        for node_index in range( len( mesh.x ) ) :
+            the_file.write( str( mesh.x[node_index] ) + ' ' + str( mesh.y[node_index] ) + ' ' + str( mesh.node_labels[node_index] ) + '\n' )
+
+        # triangles
+        for tri_index, triangle in enumerate( mesh.triangles ) :
+            the_file.write( str( list( np.array( triangle ) + 1 ) )[1:-1].replace(',',' ') + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
+
+        # edges
+        for edge in mesh.get_boundary_edges() :
+            the_file.write( str( list( np.array( edge ) + np.array([ 1, 1, 0 ]) ) )[1:-1].replace(',',' ') + '\n' )
+
+    return filename
 
 
 def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
@@ -285,9 +241,6 @@ def run_FreeFem( edp_str ) :
             print('---------------')
 
         return output.decode('utf-8')
-
-
-
 
 
 if __name__ == '__main__' :
