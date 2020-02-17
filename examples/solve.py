@@ -23,15 +23,15 @@ for matrix_type in matrix_types :
 
 FreeFem_output = pyff.run_FreeFem( edp_str )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
 
 matrices = {}
 
 for matrix_type in matrix_types :
     matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
 
-mesh.plot_triangles( lw = 1 )
-mesh.plot_boundaries( labels = False )
+mesh.plot_triangles( color = 'k', alpha = .2, lw = .5 )
+mesh.plot_boundaries()
 
 ##########################################################################################################
 
@@ -57,7 +57,7 @@ Source = matrices[ pyff.Grammian['matrix_name'] ]*np.array( [1]*len( mesh.x ) )
 u = spsolve( M, Source )
 
 pp.tricontourf( mesh, u )
-mesh.plot_boundaries( labels = False, color = 'black' )
+mesh.plot_boundaries( color = 'black' )
 
 ##########################################################################################################
 

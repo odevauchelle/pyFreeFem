@@ -13,15 +13,12 @@ edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
 
 FreeFem_output = pyff.run_FreeFem( edp_str )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
 
-triangles_plot = mesh.plot_triangles( labels = 'index' )
-mesh.plot_nodes( labels = 'index', color = triangles_plot[0].get_color() )
-mesh.plot_edges( labels = 'label', color = 'red')
-
-for key in mesh.boundary_edges.keys() :
-    print(key,mesh.boundary_edges[key] )
-
+mesh.plot_triangles( labels = 'index' )
+mesh.plot_nodes( labels = 'index', color = 'tab:blue' )
+mesh.plot_boundaries( color = 'red' )
+pp.legend( title = 'Boundary label' )
 
 pp.axis('equal')
 pp.axis('off')

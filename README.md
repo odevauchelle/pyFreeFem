@@ -21,7 +21,7 @@ print(FreeFem_output)
 >>> Hello world!
 ```
 
-## Create mesh
+## Create a mesh
 
 FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includes a mesh class inherited from matplotlib.Triangulation which keeps track of these labels.
 
@@ -29,20 +29,16 @@ FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includ
 import pyFreeFem as pyff
 import matplotlib.pyplot as pp
 
-edp_str = '''
-border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-mesh Th = buildmesh( Circle(20) );
-'''
-
 edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
 
 FreeFem_output = pyff.run_FreeFem( edp_str )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
 
-mesh.plot_triangles( labels = True )
-mesh.plot_nodes()
-mesh.plot_boundaries( color = 'red')
+mesh.plot_triangles( labels = 'index' )
+mesh.plot_nodes( labels = 'index', color = 'tab:blue' )
+mesh.plot_boundaries( color = 'red' )
+pp.legend( title = 'Boundary label' )
 
 pp.show()
 ```
@@ -119,15 +115,15 @@ for matrix_type in matrix_types :
 
 FreeFem_output = pyff.run_FreeFem( edp_str )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
 
 matrices = {}
 
 for matrix_type in matrix_types :
     matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
 
-mesh.plot_triangles()
-mesh.plot_boundaries( labels = False )
+mesh.plot_triangles( color = 'k', alpha = .2, lw = .5 )
+mesh.plot_boundaries()
 
 pp.show()
 ```
@@ -147,15 +143,88 @@ Source = matrices[ pyff.Grammian['matrix_name'] ]*np.array( [1]*len( mesh.x ) )
 u = spsolve( M, Source )
 
 pp.tricontourf( mesh, u )
-mesh.plot_boundaries( labels = False, color = 'black' )
+mesh.plot_boundaries( color = 'black' )
 ```
 
-Here is the result.
+Here is the result:
 
 ![Mesh with a hole](./figures/solve_2.svg)
 
+## Mess with the mesh
+
+We now create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++.
+```python
+import pyFreeFem as pyff
+
+# Create mesh with FreeFem++
+
+edp_str = '''
+border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
+mesh Th = buildmesh( Circle(150) );
+'''
+
+edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
+
+FreeFem_output = pyff.run_FreeFem( edp_str )
+
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
+
+# Change mesh
+
+for triangle_index in sample( range( len(mesh.triangles ) ), 20 ) :
+    mesh.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
+
+# Rename boundaries
+new_names = {1:'initial', 2:'new'}
+mesh.rename_boundary( new_names )
+```
+The mesh looks like this:
+
+![Messed up mesh](./figures/mesh_IO_mesh.svg)
+
+We want to solve the Poisson equation on this new mesh. Let us first calculate the finite-elements matrices we need.
+
+```python
+# Export mesh back to FreeFem
+
+temp_mesh_file = NamedTemporaryFile( suffix = '.msh' )
+pyff.savemesh( filename = temp_mesh_file.name, mesh = mesh )
+
+edp_str = '''
+mesh Th = readmesh( "mesh_file_name" ) ;
+'''.replace( 'mesh_file_name', temp_mesh_file.name )
+
+edp_str += pyff.export_mesh_edp()
+
+# calculate FEM matrices
+
+edp_str +='''
+fespace Vh( Th, P1 ) ;
+Vh u, v ;
+'''
+
+matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian( 1, 2 ) ]
+
+for matrix_type in matrix_types :
+    edp_str += pyff.export_matrix_edp( **matrix_type )
+
+FreeFem_output = pyff.run_FreeFem( edp_str )
+
+mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
+
+matrices = {}
+
+for matrix_type in matrix_types :
+    matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
+```
+We may now solve our finite-element problem as above. Here is the result:
+
+![Poisson on messed up mesh](./figures/mesh_IO_field.svg)
+
+
 ## To do
 
+- Import and export vectors from and to FreeFem++
 - Add more predefined matrices in FreeFemStatics, including projection matrices to P1 finite element space.
 - Export mesh to FreeFem++ without writing in file
 - Translate adaptmesh in FreeFemStatics
