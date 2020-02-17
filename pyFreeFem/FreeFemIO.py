@@ -95,25 +95,6 @@ def FreeFem_str_to_mesh( FreeFem_str, simple_boundaries = True ) :
     return mesh
 
 
-
-# def FreeFem_to_boundaries( seg_list, reorder = True ) :
-#     '''
-#     Turns a list of labelled segments into a list of boundaries.
-#     '''
-#
-#     boundaries = []
-#
-#     for label in set( seg_list[:,2] ) :
-#
-#         segments = seg_list[ np.where( seg_list[:,2] == label ), :2 ]
-#
-#         if reorder :
-#             segments = reorder_boundary( segments )
-#
-#         boundaries += [ Boundary( segments = segments, label = label ) ]
-#
-#     return boundaries
-
 def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
     '''
     ( start_node, end_node, label_integer ) -> { ( triangle_index, triangle_node_index ) : label_integer }
@@ -139,30 +120,6 @@ def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
 
         node_index_in_triangle = triangles[triangle_index].tolist().index( FreeFem_edge[0] )
         return { ( triangle_index, node_index_in_triangle ) : FreeFem_edge[-1]  }
-#
-# def boundary_edges_to_FreeFem_edges( boundary_edges,  ) :
-#     '''
-#     { ( triangle_index, triangle_node_index ) : label } -> ( start_node, end_node, label_integer )
-#     '''
-#
-#     if label_to_int is None :
-#         label_to_int_func = lambda label : int(label)
-#
-#     elif type(label_to_int) is type( {} ) :
-#         label_to_int_func = lambda label : label_to_int[ label ]
-#
-#     else :
-#         label_to_int_func = label_to_int
-#
-#     FreeFem_edges = []
-#
-#     for key in boundary_edges.keys() :
-#
-#         start_node_index, end_node_index = triangle_edge_to_node_edge( key, triangles )
-#
-#         FreeFem_edges += [ [ start_node_index + 1, end_node_index + 1, label_to_int_func( boundary_edges[key] ) ] ]
-#
-#     return np.array( FreeFem_edges )
 
 def savemesh( mesh, filename ) :
     '''
@@ -221,7 +178,7 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
 
     return np.array(data)
 
-def run_FreeFem( edp_str ) :
+def run_FreeFem( edp_str, verbose = False ) :
     '''
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
@@ -232,15 +189,23 @@ def run_FreeFem( edp_str ) :
 
     with subprocess.Popen( [command], stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
 
-        output, error = proc.communicate()
+        if verbose :
+            print('\nRunning FreeFem++...')
 
-        if not error is b'':
-            print('FreeFem++ Error')
-            print('---------------')
-            print(error)
-            print('---------------')
+        output, error = proc.communicate() # Freefem outputs errors in console
 
-        return output.decode('utf-8')
+        if not proc.returncode :
+            if verbose :
+                print('\nFreeFem++ run successfull.\n')
+            return output.decode('utf-8')
+
+        else :
+            print('\n-------------------')
+            print('FreeFem++ error :')
+            print('-------------------')
+            print(output.decode('utf-8'))
+            print('-------------------\n')
+            return None
 
 
 if __name__ == '__main__' :
