@@ -30,9 +30,9 @@ import subprocess
 from scipy.sparse import csr_matrix
 from tempfile import NamedTemporaryFile
 
-from .meshing import TriMesh#, triangle_edge_to_node_edge
-from .mesh_tools.segments import triangle_edge_to_node_edge
-from .FreeFemStatics import *
+from .TriMesh import TriMesh #, triangle_edge_to_node_edge
+from .meshTools.segments import triangle_edge_to_node_edge
+from .FreeFemTools.FreeFemStatics import *
 
 def FreeFem_str_to_matrix( FreeFem_str, matrix_name, raw = False ) :
     '''

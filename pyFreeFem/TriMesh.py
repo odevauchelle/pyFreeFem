@@ -29,10 +29,10 @@ import matplotlib.tri as mptri
 from pylab import gca, mean, array
 
 if __name__ == '__main__' :
-    from mesh_tools.segments import *
+    from meshTools.segments import *
 
 else :
-    from .mesh_tools.segments import *
+    from .meshTools.segments import *
 
 TriMesh_structure ='''
 TriMesh attributes:

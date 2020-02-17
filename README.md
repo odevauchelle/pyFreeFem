@@ -29,6 +29,11 @@ FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includ
 import pyFreeFem as pyff
 import matplotlib.pyplot as pp
 
+edp_str = '''
+border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
+mesh Th = buildmesh( Circle(10) );
+'''
+
 edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
 
 FreeFem_output = pyff.run_FreeFem( edp_str )
