@@ -34,13 +34,24 @@ from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
 
-def FreeFem_str_to_matrix( FreeFem_str, matrix_name, raw = False ) :
+def parse_FreeFem_output( FreeFem_str, flag ) :
+
+    return FreeFem_str.split( flag )[1]
+
+def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = None ) :
     '''
     '''
 
-    flag = '# MATRIX ' + matrix_name + '\n'
+    if not flag is None :
+        FreeFem_lines = parse_FreeFem_output( FreeFem_str, flag ).split('\n')
 
-    FreeFem_lines = FreeFem_str.split( flag )[1].split('\n')
+    elif not matrix_name is None:
+        flag = '# MATRIX ' + matrix_name + '\n'
+        FreeFem_lines = parse_FreeFem_output( FreeFem_str, flag ).split('\n')
+
+    else :
+        FreeFem_lines = FreeFem_str.split('\n')
+
     nb_row, nb_col, is_symmetric, nb_coef = map( lambda x : int(x), FreeFem_lines[3].split() )
     I, J, coef = loadstr( '\n'.join(  FreeFem_lines[4:-1] ) ).T
     I = np.array( list( map( lambda x: int(x), I ) ) ) - 1
@@ -52,7 +63,7 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name, raw = False ) :
     else :
         return csr_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
 
-def FreeFem_str_to_mesh( FreeFem_str, simple_boundaries = True ) :
+def FreeFem_str_to_mesh( FreeFem_str  ) :
 
     '''
     '''
@@ -234,7 +245,7 @@ if __name__ == '__main__' :
 
     # print(FreeFem_output)
 
-    mesh = FreeFem_str_to_mesh( FreeFem_output, simple_boundaries = True )
+    mesh = FreeFem_str_to_mesh( FreeFem_output  )
 
     matrices = {}
 
