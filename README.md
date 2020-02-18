@@ -222,7 +222,7 @@ matrices = {}
 for matrix_type in matrix_types :
     matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
 ```
-We may now solve our finite-element problem as above. Here is the result:
+We may now solve our finite-element problem as [above](##solve-a-simple-problem). Here is the result:
 
 ![Poisson on messed up mesh](./figures/mesh_IO_field.svg)
 
