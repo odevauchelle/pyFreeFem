@@ -4,7 +4,7 @@ sys.path.append('./../')
 from pyFreeFem import run_FreeFem
 from pyFreeFem.FreeFemTools.edpTools import FreeFemize, headerFrame, flagize
 from pyFreeFem.FreeFemTools.FreeFemStatics import *
-from pyFreeFem.FreeFemIO import FreeFem_str_to_matrix, parse_FreeFem_output, FreeFem_str_to_mesh
+from pyFreeFem.FreeFemIO import parse_FreeFem_output, FreeFem_str_to_matrix, FreeFem_str_to_mesh, FreeFem_str_to_vector
 
 class edpOutput :
     '''
@@ -45,6 +45,9 @@ class edpOutput :
         if self.type == 'matrix' :
             edp = export_matrix_edp( create_varf = False, create_and_add_flags = False, Mmatrix_name = self.FreeFem_name, **self.other_variables )
 
+        elif self.type == 'vector' :
+            edp = export_vector_edp( base_func = self.FreeFem_name )
+
         elif self.type == 'mesh' :
             edp = export_mesh_edp( Th = self.FreeFem_name )
 
@@ -54,6 +57,9 @@ class edpOutput :
 
         if self.type == 'matrix' :
             return FreeFem_str_to_matrix( parse_FreeFem_output( FreeFem_output, self.flag  ) )
+
+        elif self.type == 'vector' :
+            return FreeFem_str_to_vector( parse_FreeFem_output( FreeFem_output, self.flag ) )
 
         elif self.type == 'mesh' :
             return FreeFem_str_to_mesh( parse_FreeFem_output( FreeFem_output, self.flag ) )
@@ -216,27 +222,38 @@ if __name__ == '__main__' :
 
     script += edpOutput( type = 'mesh', name = 'Th' )
 
-    # script += edpBlock(
-    #     name = 'adapt_mesh',
-    #     content = 'Th = adaptmesh( Th, 1, hmax = .2 );',
-    #     output = edpOutput( type = 'mesh', name = 'Th2', FreeFem_name = 'Th' )
-    #     )
-
     script += edpBlock(
-        name = 'stiffness_matrix',
-        content = create_varf_matrix( **stiffness ),
-        output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
+        name = 'adapt_mesh',
+        content = 'Th = adaptmesh( Th, 1, hmax = .2 );',
+        output = edpOutput( type = 'mesh', name = 'Th2', FreeFem_name = 'Th' )
         )
 
-    script = edpScript( name = 'This is a title' ) + script
+    script += edpBlock(
+        name = 'vector output',
+        content = 'u = x^2;',
+        output = edpOutput( type = 'vector', name = 'x2', FreeFem_name = 'u' )
+        )
 
-    print(script.get_edp())
-    print(script.run())
+    # script += edpBlock(
+    #     name = 'stiffness_matrix',
+    #     content = create_varf_matrix( **stiffness ),
+    #     output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
+    #     )
+
+    # script = edpScript( name = 'This is a title' ) + script
+
+    # print(script.get_edp())
+    # print(script.run())
 
     FFdata = script.get_output()
     #
-    FFdata['Th'].plot_triangles()
-    # FFdata['Th2'].plot_triangles( alpha = .2 )
+
+    print( len( FFdata['x2'] ) )
+    print( len( FFdata['Th2'].x ) )
+    # FFdata['Th'].plot_triangles()
+    tricontourf( FFdata['Th2'], FFdata['x2'] )
+
+    FFdata['Th2'].plot_triangles( alpha = .2 )
 
     axis('equal')
     show()

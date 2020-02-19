@@ -124,6 +124,29 @@ def export_matrix_edp( create_varf = True, create_and_add_flags = True, **kwargs
 
 ###################################
 #
+# EXPORT VECTORS
+#
+###################################
+
+def export_vector_edp( **kwargs ) :
+
+    # edp_str = 'cout << base_func[];\n'
+
+    edp_str = '''
+    for (int nVector = 0; nVector < base_func.n; nVector++ )
+    	{
+    	cout << base_func[][nVector] << endl;
+    	}
+    '''
+
+
+    for key in kwargs.keys() :
+        edp_str = edp_str.replace( key, kwargs[key] )
+
+    return edp_str
+
+###################################
+#
 # TYPICAL MATRICES
 #
 ###################################

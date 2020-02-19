@@ -39,7 +39,7 @@ def parse_FreeFem_output( FreeFem_str, flag ) :
 
     return FreeFem_str.split( flag + '\n' )[1]
 
-def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = None ) :
+def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, raw = False ) :
     '''
     '''
 
@@ -63,6 +63,9 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = 
         return ( coef, (I, J) ), ( nb_row, nb_col )
     else :
         return csr_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
+
+def FreeFem_str_to_vector( Freefem_str, dtype = 'float' ) :
+    return  loadstr( Freefem_str[:-1], dtype = dtype ).flatten( )
 
 def FreeFem_str_to_mesh( FreeFem_str ) :
 
