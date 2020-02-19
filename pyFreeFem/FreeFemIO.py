@@ -33,10 +33,11 @@ from tempfile import NamedTemporaryFile
 from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
+from .FreeFemTools.edpTools import flagize
 
 def parse_FreeFem_output( FreeFem_str, flag ) :
 
-    return FreeFem_str.split( flag )[1]
+    return FreeFem_str.split( flag + '\n' )[1]
 
 def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = None ) :
     '''
@@ -46,7 +47,7 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = 
         FreeFem_lines = parse_FreeFem_output( FreeFem_str, flag ).split('\n')
 
     elif not matrix_name is None:
-        flag = '# MATRIX ' + matrix_name + '\n'
+        flag = flagize( matrix_name ) # '# MATRIX ' + matrix_name
         FreeFem_lines = parse_FreeFem_output( FreeFem_str, flag ).split('\n')
 
     else :
@@ -63,26 +64,26 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, raw = False, flag = 
     else :
         return csr_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
 
-def FreeFem_str_to_mesh( FreeFem_str  ) :
+def FreeFem_str_to_mesh( FreeFem_str ) :
 
     '''
     '''
 
     FreeFem_str = '\n' + FreeFem_str + '\n'
 
-    flag = {
-        'nodes' : '\n# NODES\n',
-        'boundaries' : '\n# BOUNDARIES\n',
-        'triangles' : '\n# TRIANGLES\n'
-        }
+    # flag = {
+    #     'nodes' : '\n# NODES\n',
+    #     'boundaries' : '\n# BOUNDARIES\n',
+    #     'triangles' : '\n# TRIANGLES\n'
+    #     }
 
     FreeFem_mesh = {}
 
     for key in ['triangles', 'boundaries'] :
-        FreeFem_mesh[key] = loadstr( FreeFem_str.split( flag[key] )[1], dtype = 'int' )
+        FreeFem_mesh[key] = loadstr( FreeFem_str.split( '\n' + flagize(key) + '\n' )[1], dtype = 'int' )
 
     for key in ['nodes'] :
-        FreeFem_mesh[key] = loadstr( FreeFem_str.split( flag[key] )[1], dtype = 'float' )
+        FreeFem_mesh[key] = loadstr( FreeFem_str.split( '\n' + flagize(key) + '\n' )[1], dtype = 'float' )
 
     x, y, node_labels = FreeFem_mesh['nodes'].T
     node_labels = list( map( lambda x: int(x), node_labels ) )
@@ -194,7 +195,7 @@ def run_FreeFem( edp_str, verbose = False ) :
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
 
-    edp_str = edp_str.replace( '"', "\"'\"" )
+    edp_str = edp_str.replace( '"',  "\"'\"" )
 
     command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
 
@@ -216,6 +217,15 @@ def run_FreeFem( edp_str, verbose = False ) :
             print('-------------------')
             print(output.decode('utf-8'))
             print('-------------------\n')
+
+            if verbose :
+                print('\n-------------------')
+                print('edp file :')
+                print('-------------------')
+                for line_number, line in enumerate( edp_str.split('\n') ) :
+                    print( str( line_number + 1 ) + '    ' + line )
+                print('-------------------\n')
+
             return None
 
 

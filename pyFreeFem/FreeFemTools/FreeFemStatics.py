@@ -24,8 +24,10 @@
 # G. Seizilles, E. Lajeunesse, Physical Review Letters, 123, 014501, 2019
 
 separator = '''
-///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////\n
 '''
+
+from .edpTools import flagize
 
 ###################################
 #
@@ -40,30 +42,30 @@ def add_flags( edp_str, flags ) :
 
     start_flag, end_flag = flags
 
-    return 'cout << "# ' + start_flag + '" << endl;\n' + edp_str + 'cout << "# ' + end_flag + '" << endl;\n'
+    edp_str = 'cout << "' + start_flag + '" << endl;\n' + edp_str + 'cout << "' + end_flag + '" << endl;\n'
 
-
+    return edp_str
 
 export_nodes =  add_flags( '''
-for (int nv = 0; nv < Th.nv; nv++ ) // iteration over all nodes
+for (int nv = 0; nv < Th.nv; nv++ )
 	{
 	cout << Th(nv).x << " " << Th(nv).y << " " << Th(nv).label << endl;
 	}
-''', 'NODES' )
+''', flagize( 'nodes' ) )
 
 export_triangles =  add_flags( '''
-for (int nt = 0; nt < Th.nt; nt++ ) // iteration over all triangles
+for (int nt = 0; nt < Th.nt; nt++ )
 	{
 	cout << Th[nt][0] << " " << Th[nt][1] << " " << Th[nt][2] << " " << Th[nt].label << endl;
 	}
-''', 'TRIANGLES' )
+''', flagize( 'triangles' ) )
 
 export_boundaries =  add_flags( '''
-for (int ne = 0; ne < Th.nbe; ne++ ) // iteration over all boundary segments
+for (int ne = 0; ne < Th.nbe; ne++ )
 	{
 	cout << Th.be(ne)[0] << " " << Th.be(ne)[1] << " " << Th.be(ne).label << endl;
 	}
-''', 'BOUNDARIES' )
+''', flagize( 'boundaries' ) )
 
 def export_mesh_edp( **kwargs ) :
 
@@ -80,22 +82,45 @@ def export_mesh_edp( **kwargs ) :
 #
 ###################################
 
-def export_matrix_edp( **kwargs ) :
+def create_varf_matrix( **kwargs ) :
 
     edp_str = '''
     varf Vmatrix_name( base_func, test_func ) = variational_formulation ;
     matrix Mmatrix_name = Vmatrix_name( Vh, Vh ) ;
-    Mmatrix_name.resize( base_func[].n, base_func[].n );
     '''
-
-    edp_str += add_flags('''
-    cout << Mmatrix_name;
-    ''', 'MATRIX ' + 'matrix_name' )
 
     for key in kwargs.keys() :
         edp_str = edp_str.replace( key, kwargs[key] )
 
-    return edp_str.join( [separator]*2 )
+    return  edp_str
+
+def export_matrix_edp( create_varf = True, create_and_add_flags = True, **kwargs ) :
+
+    edp_str = ''
+
+    if create_varf :
+        edp_str += create_varf_matrix()
+        edp_str += separator
+
+    export_edp_str = '''
+    Mmatrix_name.resize( base_func[].n, base_func[].n );
+    cout << Mmatrix_name;
+    '''
+
+    if create_and_add_flags :
+        try :
+            flag = flagize( kwargs['matrix_name'] )
+        except :
+            flag = flagize( 'matrix_name' )
+
+        export_edp_str += add_flags( export_edp_str, flag )
+
+    edp_str += export_edp_str
+
+    for key in kwargs.keys() :
+        edp_str = edp_str.replace( key, kwargs[key] )
+
+    return edp_str
 
 ###################################
 #
@@ -142,7 +167,8 @@ def boundary_Grammian( *boundary_label ) :
 
 
 if __name__ == '__main__' :
-    print( export_matrix_edp( **stiffness ) )
-    print( export_matrix_edp( **Grammian ) )
-    print( export_matrix_edp( **boundary_Neumann( 1, 3 ) ) )
-    print( export_matrix_edp( **boundary_Grammian( 1, 'circle' ) ) )
+    print( export_mesh_edp() )
+    # print( export_matrix_edp( **stiffness ) )
+    # print( export_matrix_edp( **Grammian ) )
+    # print( export_matrix_edp( **boundary_Neumann( 1, 3 ) ) )
+    # print( export_matrix_edp( **boundary_Grammian( 1, 'circle' ) ) )

@@ -21,7 +21,9 @@ matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian(1,2) ]
 for matrix_type in matrix_types :
     edp_str += pyff.export_matrix_edp( **matrix_type )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+print(edp_str)
+
+FreeFem_output = pyff.run_FreeFem( edp_str, verbose = True )
 
 mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
 

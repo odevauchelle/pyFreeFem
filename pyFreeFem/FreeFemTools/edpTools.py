@@ -17,7 +17,19 @@ def FreeFemize( name, type = 'variable' ) :
 
     return name
 
+def headerFrame( header ) :
+    edp = '\n/////////////////////////////\n'
+    edp += '//\n'
+    edp += '//    ' + header + '\n'
+    edp += '//\n'
+    edp += '/////////////////////////////\n\n'
+    return edp
+
+def flagize( name ) :
+    return '# FLAG > ' + FreeFemize( name, type = 'header' )
+
 if __name__ == '__main__' :
 
     print( FreeFemize( 'toto_ça$$$_vélo$_35' ) )
-    print( FreeFemize( 'toto_ça$$$____vélo$_35' , type = 'header' ) )
+    print( headerFrame(FreeFemize( 'toto_ça$$$____vélo$_35' , type = 'header' )) )
+    print( flagize( 'début' ) )
