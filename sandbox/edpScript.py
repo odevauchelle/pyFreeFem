@@ -1,10 +1,10 @@
 import sys
 sys.path.append('./../')
 
-from pyFreeFem import run_FreeFem
+from pyFreeFem import run_FreeFem, TriMesh, savemesh
 from pyFreeFem.FreeFemTools.edpTools import FreeFemize, headerFrame, flagize
 from pyFreeFem.FreeFemTools.FreeFemStatics import *
-from pyFreeFem.FreeFemIO import parse_FreeFem_output, FreeFem_str_to_matrix, FreeFem_str_to_mesh, FreeFem_str_to_vector
+from pyFreeFem.FreeFemIO import *
 
 class edpOutput :
     '''
@@ -19,7 +19,7 @@ class edpOutput :
             name (str): name under which the output will be returned
             FreeFem_name (str): name of the variable in the edp file
             flag (str): flag signalling the output in the FreeFem++ stream
-            other_variables (dict) : translation dictionnary for FreeFem++ variables.
+            other_variables (dict) : translation dictionnary for FreeFem++ variables
         '''
 
         self.type = type
@@ -63,6 +63,81 @@ class edpOutput :
 
         elif self.type == 'mesh' :
             return FreeFem_str_to_mesh( parse_FreeFem_output( FreeFem_output, self.flag ) )
+
+class edpInput :
+    '''
+    Input into FreeFem.
+    '''
+
+    def __init__( self, source, name, FreeFem_name = None, source_type = None, declare_variable = True ) :
+        '''
+        edpInput( source, name, FreeFem_name = None, source_type = None )
+
+        Arguments:
+            source ( TriMesh, list, array, sparse matrix ) : to be loaded into FreeFem++
+            name (str) : input name
+            FreeFem_name (str) : name of the corresponding FreeFem++ variable
+            source_type (str) : mesh, vector, matrix or number
+            declare_variable (bool) : whether to declare the FreeFem++ variable or not
+        '''
+
+        self.source = source
+        self.name = name
+        self.declare_variable = declare_variable
+
+        if source_type is None :
+
+            if type(source) is TriMesh :
+                self.type = 'mesh'
+
+            elif type(source) is int :
+                self.type = 'int'
+
+            elif type(source) is float :
+                self.type = 'real'
+
+            elif type(source) in [ list, array, ndarray ] :
+                self.type = 'vector'
+
+            elif type(source) is default_sparse_matrix :
+                self.type = 'matrix'
+
+            else :
+                self.type = None
+
+        else :
+            self.type = source_type
+
+
+        if FreeFem_name is None :
+            self.FreeFem_name = FreeFemize( name, type = 'variable' )
+        else :
+            self.FreeFem_name = FreeFem_name
+
+    def get_edp( self, **kwargs ) :
+
+        edp_str = ''
+
+        if self.type is 'mesh' :
+
+            temp_mesh_file = NamedTemporaryFile( suffix = '.msh' )
+
+            savemesh( filename = temp_mesh_file.name, mesh = self.source )
+
+            substitutions = { 'mesh_file_name' : temp_mesh_file.name, 'Th' : self.FreeFem_name }
+
+            if self.declare_variable :
+                edp_str += 'mesh Th;\n'
+
+            edp_str += '''
+            Th = readmesh( "mesh_file_name" ) ;
+            '''
+
+            for key in substitutions.keys() :
+                edp_str = edp_str.replace( key, substitutions[key] )
+
+        return edp_str
+
 
 
 class edpBlock :
@@ -115,7 +190,6 @@ class edpBlock :
             edp += output.get_edp()
 
         edp += headerFrame( self.header + ' END' )
-
 
         return edp
 
@@ -234,11 +308,11 @@ if __name__ == '__main__' :
         output = edpOutput( type = 'vector', name = 'x2', FreeFem_name = 'u' )
         )
 
-    # script += edpBlock(
-    #     name = 'stiffness_matrix',
-    #     content = create_varf_matrix( **stiffness ),
-    #     output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
-    #     )
+    script += edpBlock(
+        name = 'stiffness_matrix',
+        content = create_varf_matrix( **stiffness ),
+        output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
+        )
 
     # script = edpScript( name = 'This is a title' ) + script
 
@@ -248,8 +322,10 @@ if __name__ == '__main__' :
     FFdata = script.get_output()
     #
 
-    print( len( FFdata['x2'] ) )
-    print( len( FFdata['Th2'].x ) )
+    input = edpInput( name = 'Th', source = FFdata['Th2'] )
+    print( input.get_edp() )
+
+
     # FFdata['Th'].plot_triangles()
     tricontourf( FFdata['Th2'], FFdata['x2'] )
 

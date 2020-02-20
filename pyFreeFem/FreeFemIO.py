@@ -35,11 +35,13 @@ from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
 from .FreeFemTools.edpTools import flagize
 
+default_sparse_matrix = csr_matrix
+
 def parse_FreeFem_output( FreeFem_str, flag ) :
 
     return FreeFem_str.split( flag + '\n' )[1]
 
-def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, raw = False ) :
+def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_matrix = None ) :
     '''
     '''
 
@@ -59,10 +61,14 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, raw = F
     J = np.array( list( map( lambda x: int(x), J ) ) ) - 1
     coef = np.array( list( map( lambda x: float(x), coef ) ) )
 
-    if raw :
+    if sparse_matrix is None :
+        return default_sparse_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
+
+    elif sparse_matrix is 'raw' :
         return ( coef, (I, J) ), ( nb_row, nb_col )
+
     else :
-        return csr_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
+        return sparse_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
 
 def FreeFem_str_to_vector( Freefem_str, dtype = 'float' ) :
     return  loadstr( Freefem_str[:-1], dtype = dtype ).flatten( )
