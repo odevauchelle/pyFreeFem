@@ -1,3 +1,5 @@
+from pylab import savetxt
+
 import sys
 sys.path.append('./../')
 
@@ -69,7 +71,7 @@ class edpInput :
     Input into FreeFem.
     '''
 
-    def __init__( self, source, name, FreeFem_name = None, source_type = None, tempfile = None ) :
+    def __init__( self, source, name, FreeFem_name = None, source_type = None, tempfile = None, declare = True ) :
         '''
         edpInput( source, name, FreeFem_name = None, source_type = None )
 
@@ -83,6 +85,12 @@ class edpInput :
         self.source = source
         self.name = name
         self.tempfile = tempfile # including when it's None
+        self.declare = declare
+
+        if FreeFem_name is None :
+            self.FreeFem_name = FreeFemize( name, type = 'variable' )
+        else :
+            self.FreeFem_name = FreeFem_name
 
         if source_type is None :
 
@@ -107,12 +115,6 @@ class edpInput :
         else :
             self.type = source_type
 
-
-        if FreeFem_name is None :
-            self.FreeFem_name = FreeFemize( name, type = 'variable' )
-        else :
-            self.FreeFem_name = FreeFem_name
-
     def get_edp( self, **kwargs ) :
 
         edp_str = ''
@@ -123,22 +125,51 @@ class edpInput :
         if self.type is 'mesh' :
 
             if self.tempfile is None :
-                self.tempfile = NamedTemporaryFile( suffix = '.msh', delete = True )
+                self.tempfile = NamedTemporaryFile( suffix = '.msh' )
 
             savemesh( filename = self.tempfile.name, mesh = self.source )
 
+            if self.declare :
+                edp_str += 'mesh Th;\n'
+
+            edp_str += 'Th = readmesh( "mesh_file_name" ) ;\n'
+
             kwargs.update( { 'mesh_file_name' : self.tempfile.name, 'Th' : self.FreeFem_name } )
 
+            for key in kwargs.keys() :
+                edp_str = edp_str.replace( key, kwargs[key] )
+
+        elif self.type is 'vector' :
+
+            if self.tempfile is None :
+                self.tempfile = NamedTemporaryFile( suffix = '.ffv' )
+
+            # for value in self.source :
+            #     str_value = ( str( value ) + '\n' ).encode('utf8')
+            #     self.tempfile.write( str_value )
+
+            savetxt( self.tempfile.name, self.source ) # using the file handle would be better, but then writing doesn't complete
+
+            if self.declare :
+                edp_str += 'Vh vector_name;\n'
+
             edp_str += '''
-            Th = readmesh( "mesh_file_name" ) ;
+                {
+                    ifstream InputFile("vector_file_name");
+
+                    for(int i = 0; i < vector_name.n; i++)
+                        {
+                        InputFile >> vector_name[][i];
+                        }
+                }
             '''
+
+            kwargs.update( { 'vector_file_name' : self.tempfile.name, 'vector_name' : self.FreeFem_name } )
 
             for key in kwargs.keys() :
                 edp_str = edp_str.replace( key, kwargs[key] )
 
         return edp_str
-
-
 
 class edpBlock :
     '''
@@ -269,11 +300,17 @@ class edpScript :
         return edp
 
     def clean_temp_files(self, verbose = False) :
+
         for block in self.blocks :
+
             for input in block.input :
-                if verbose :
-                    print( 'Erasing temporary file ' + input.tempfile.name )
-                input.tempfile.close()
+
+                if not input.tempfile is None :
+
+                    if verbose :
+                        print( 'Erasing temporary file ' + input.tempfile.name )
+
+                    input.tempfile.close()
 
     def run( self, **kwargs ) :
         freefem_output = run_FreeFem( self.get_edp(), **kwargs )
@@ -301,46 +338,46 @@ if __name__ == '__main__' :
         blocks = edpBlock(
             content = '''
             border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-            mesh Th = buildmesh( Circle(10) );
-            fespace Vh( Th, P1 );
-            Vh u,v;
+            mesh Th = buildmesh( Circle(15) );
             ''')
         )
 
     script += edpBlock(
         name = 'adapt_mesh',
-        content = 'Th = adaptmesh( Th, 1, hmax = .2 );',
-        output = edpOutput( type = 'mesh', name = 'Th2', FreeFem_name = 'Th' )
+        content = 'Th = adaptmesh( Th, 1, hmax = .01 );',
+        output = edpOutput( type = 'mesh', name = 'Th_refined', FreeFem_name = 'Th' )
         )
 
-    script += edpOutput( type = 'mesh', name = 'Th' )
+    Th = script.get_output()['Th_refined']
 
-    Th = script.get_output()['Th']
+    script = edpScript('')
 
-    script = edpScript('mesh Th;')
+    u = sin( Th.x*pi*5 + 2*Th.y**3 )
 
     script += edpBlock( input = edpInput( name = 'Th', source = Th ) )
 
     script += '''
     fespace Vh( Th, P1 );
-    Vh u,v;
     '''
+
+    script += edpBlock( input = edpInput( name = 'u', FreeFem_name = 'u', source = u ) )
 
     script += edpBlock(
         name = 'vector output',
-        content = 'u = x^2;',
-        output = edpOutput( type = 'vector', name = 'x2', FreeFem_name = 'u' )
+        output = edpOutput( type = 'vector', name = 'u', FreeFem_name = 'u' )
         )
 
-    script += edpBlock(
-        name = 'stiffness_matrix',
-        content = create_varf_matrix( **stiffness ),
-        output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
-        )
+
+
+    # script += edpBlock(
+    #     name = 'stiffness_matrix',
+    #     content = create_varf_matrix( **stiffness ),
+    #     output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', other_variables = stiffness )
+    #     )
 
     FFdata = script.get_output()
-    tricontourf( Th, FFdata['x2'] )
-    Th.plot_triangles( alpha = .2, color = 'w' )
+    tricontourf( Th, FFdata['u'] )
+    Th.plot_triangles( alpha = .2, color = 'w', lw = 1 )
 
     axis('equal')
     show()
