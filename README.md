@@ -13,9 +13,9 @@ Run FreeFem++ from Python:
 ```python
 import pyFreeFem as pyff
 
-FreeFem_output = pyff.run_FreeFem( 'cout << "Hello world!" << endl;' )
+script = pyff.edpScript( 'cout << "Hello world!" << endl;' )
 
-print(FreeFem_output)
+print( script.run() )
 ```
 ```console
 >>> Hello world!
@@ -25,66 +25,45 @@ print(FreeFem_output)
 
 FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includes a mesh class inherited from matplotlib.Triangulation which keeps track of these labels.
 
-```python
-import pyFreeFem as pyff
-import matplotlib.pyplot as pp
-
-edp_str = '''
+```Python
+script = pyff.edpScript('''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
-'''
+''')
 
-edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+Th = script.get_output()['Th']
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-
-mesh.plot_triangles( labels = 'index' )
-mesh.plot_nodes( labels = 'index', color = 'tab:blue' )
-mesh.plot_boundaries( color = 'red' )
+Th.plot_triangles( labels = 'index' )
+Th.plot_nodes( labels = 'index', color = 'tab:blue' )
+Th.plot_boundaries( color = 'red' )
 pp.legend( title = 'Boundary label' )
-
 pp.show()
 ```
 ![Circular mesh](./figures/create_mesh.svg)
 
 ## Finite element matrices
 
-To get finite element matrices, we first need to write them in the edp file read by FreeFem++. A simple way to do so is to use a predefined matrix, which is nothing but a dictionary:
+To get finite element matrices, we first need to create a mesh, and define a finite element space. The VarfBlock function then creates, and exports, the matrix corresponding to a variational formulation:
 
 ```python
 import pyFreeFem as pyff
 
-FE_matrix = pyff.stiffness
-
-for key in FE_matrix.keys() :
-    print( key + ' : ' + FE_matrix[key] )
-```
-```console
->>> test_func : v
->>> func : u
->>> matrix_name : stiffness
->>> variational_formulation : int2d( Th )( dx(u)*dx(v) + dy(u)*dy(v) )
-```
-
-Calling the function export_matrix_edp translates this dictionary into a FreeFem++ command. After running FreeFem++, we then import the finite element matrix as a numpy sparse matrix:
-
-```python
-edp_str = '''
+script = pyff.edpScript('''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(20) );
-
 fespace Vh( Th, P1 );
 Vh u,v;
-'''
+''' )
 
-edp_str += pyff.export_matrix_edp( **FE_matrix )
-FreeFem_output = pyff.run_FreeFem( edp_str )
+# Create and export stiffness matrix
+script += pyff.VarfBlock( name = 'StM', varf = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
 
-stiffness_matrix = pyff.FreeFem_str_to_matrix( FreeFem_output, FE_matrix['matrix_name'] )
-print(stiffness_matrix)
+StM = script.get_output()['StM']
+print(StM)
 ```
+
 ```console
 >>> (0, 0)	1.72789742056
 >>> (0, 1)	-0.422931342447
@@ -101,7 +80,7 @@ We first create a mesh, and import the associated matrices.
 import pyFreeFem as pyff
 import matplotlib.pyplot as pp
 
-edp_str = '''
+script = pyff.edpScript('''
 real smallRadius = .3;
 border outerCircle( t = 0, 2*pi ){ x = cos(t); y = 0.8*sin(t); }
 border innerCircle( t = 2*pi, 0 ){ x = .5 + smallRadius*cos(t); y = smallRadius*sin(t); }
@@ -109,27 +88,24 @@ mesh Th = buildmesh( outerCircle(100) + innerCircle(40) );
 
 fespace Vh( Th, P1 );
 Vh u,v;
-'''
+''')
 
-edp_str += pyff.export_mesh_edp()
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian(1,2) ]
+matrices = {
+    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    'Grammian' : 'int2d(Th)( u*v )',
+    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
+}
 
-for matrix_type in matrix_types :
-    edp_str += pyff.export_matrix_edp( **matrix_type )
+for matrix_name in matrices.keys() :
+    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+ff_output = script.get_output()
+Th = ff_output['Th']
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-
-matrices = {}
-
-for matrix_type in matrix_types :
-    matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
-
-mesh.plot_triangles( color = 'k', alpha = .2, lw = .5 )
-mesh.plot_boundaries()
-
+Th.plot_triangles( color = 'k', alpha = .2, lw = .5 )
+Th.plot_boundaries()
 pp.show()
 ```
 The mesh looks like this:
@@ -143,14 +119,14 @@ from scipy.sparse.linalg import spsolve
 import numpy as np
 
 epsilon = 1e-4
-M = - matrices[ pyff.stiffness['matrix_name'] ] + 1./epsilon*matrices[ pyff.boundary_Grammian(1,2)['matrix_name'] ]
-Source = matrices[ pyff.Grammian['matrix_name'] ]*np.array( [1]*len( mesh.x ) )
+M = - ff_output['stiffness'] + 1./epsilon*ff_output['boundary_Grammian']
+Source = ff_output['Grammian']*np.array( [1]*len( Th.x ) )
 u = spsolve( M, Source )
 
-pp.tricontourf( mesh, u )
-mesh.plot_boundaries( color = 'black' )
+pp.tricontourf( Th, u )
+Th.plot_boundaries( color = 'black' )
+pp.show()
 ```
-
 Here is the result:
 
 ![Mesh with a hole](./figures/solve_2.svg)
@@ -163,25 +139,22 @@ import pyFreeFem as pyff
 
 # Create mesh with FreeFem++
 
-edp_str = '''
+script = pyff.edpScript( '''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(150) );
-'''
+''' )
 
-edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
+Th = script.get_output()['Th']
+
 
 # Change mesh
+for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
+    Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
 
-for triangle_index in sample( range( len(mesh.triangles ) ), 20 ) :
-    mesh.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
-
-# Rename boundaries
-new_names = {1:'initial', 2:'new'}
-mesh.rename_boundary( new_names )
+Th.rename_boundary( {1:'initial', 2:'new'} )
 ```
 The mesh looks like this:
 
@@ -192,44 +165,33 @@ We want to solve the Poisson equation on this new mesh. Let us first calculate t
 ```python
 # Export mesh back to FreeFem
 
-temp_mesh_file = NamedTemporaryFile( suffix = '.msh' )
-pyff.savemesh( filename = temp_mesh_file.name, mesh = mesh )
-
-edp_str = '''
-mesh Th = readmesh( "mesh_file_name" ) ;
-'''.replace( 'mesh_file_name', temp_mesh_file.name )
-
-edp_str += pyff.export_mesh_edp()
+script = pyff.edpScript( pyff.edpInput( name = 'Th', source = Th ) )
 
 # calculate FEM matrices
 
-edp_str +='''
+script +='''
 fespace Vh( Th, P1 ) ;
 Vh u, v ;
 '''
 
-matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian( 1, 2 ) ]
+matrices = {
+    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    'Grammian' : 'int2d(Th)( u*v )',
+    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
+}
 
-for matrix_type in matrix_types :
-    edp_str += pyff.export_matrix_edp( **matrix_type )
+for matrix_name in matrices.keys() :
+    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
-
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-
-matrices = {}
-
-for matrix_type in matrix_types :
-    matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
+matrices = script.get_output()
 ```
 We may now solve our finite-element problem as [above](#solve-a-simple-problem). Here is the result:
 
 ![Poisson on messed up mesh](./figures/mesh_IO_field.svg)
 
+A more useful mesh change, perhaps, is to [refine it](./documentation/adaptmesh.md).
 
 ## To do
 
-- Import and export vectors from and to FreeFem++
-- Add more predefined matrices in FreeFemStatics, including projection matrices to P1 finite element space.
-- Export mesh to FreeFem++ without writing in file
-- Translate adaptmesh in FreeFemStatics
+- Import mesh, vectors and matrices to FreeFem++ without writing in temporary file
+- Import and export real numbers and integers

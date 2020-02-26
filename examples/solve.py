@@ -4,7 +4,7 @@ sys.path.append('./../')
 import pyFreeFem as pyff
 import matplotlib.pyplot as pp
 
-edp_str = '''
+script = pyff.edpScript('''
 real smallRadius = .3;
 border outerCircle( t = 0, 2*pi ){ x = cos(t); y = 0.8*sin(t); }
 border innerCircle( t = 2*pi, 0 ){ x = .5 + smallRadius*cos(t); y = smallRadius*sin(t); }
@@ -12,28 +12,24 @@ mesh Th = buildmesh( outerCircle(100) + innerCircle(40) );
 
 fespace Vh( Th, P1 );
 Vh u,v;
-'''
+''')
 
-edp_str += pyff.export_mesh_edp()
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian(1,2) ]
+matrices = {
+    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    'Grammian' : 'int2d(Th)( u*v )',
+    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
+}
 
-for matrix_type in matrix_types :
-    edp_str += pyff.export_matrix_edp( **matrix_type )
+for matrix_name in matrices.keys() :
+    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
 
-print(edp_str)
+ff_output = script.get_output()
+Th = ff_output['Th']
 
-FreeFem_output = pyff.run_FreeFem( edp_str, verbose = True )
-
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-
-matrices = {}
-
-for matrix_type in matrix_types :
-    matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
-
-mesh.plot_triangles( color = 'k', alpha = .2, lw = .5 )
-mesh.plot_boundaries()
+Th.plot_triangles( color = 'k', alpha = .2, lw = .5 )
+Th.plot_boundaries()
 
 ##########################################################################################################
 
@@ -54,12 +50,12 @@ from scipy.sparse.linalg import spsolve
 import numpy as np
 
 epsilon = 1e-4
-M = - matrices[ pyff.stiffness['matrix_name'] ] + 1./epsilon*matrices[ pyff.boundary_Grammian(1,2)['matrix_name'] ]
-Source = matrices[ pyff.Grammian['matrix_name'] ]*np.array( [1]*len( mesh.x ) )
+M = - ff_output['stiffness'] + 1./epsilon*ff_output['boundary_Grammian']
+Source = ff_output['Grammian']*np.array( [1]*len( Th.x ) )
 u = spsolve( M, Source )
 
-pp.tricontourf( mesh, u )
-mesh.plot_boundaries( color = 'black' )
+pp.tricontourf( Th, u )
+Th.plot_boundaries( color = 'black' )
 
 ##########################################################################################################
 

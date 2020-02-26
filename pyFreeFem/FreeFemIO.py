@@ -80,12 +80,6 @@ def FreeFem_str_to_mesh( FreeFem_str ) :
 
     FreeFem_str = '\n' + FreeFem_str + '\n'
 
-    # flag = {
-    #     'nodes' : '\n# NODES\n',
-    #     'boundaries' : '\n# BOUNDARIES\n',
-    #     'triangles' : '\n# TRIANGLES\n'
-    #     }
-
     FreeFem_mesh = {}
 
     for key in ['triangles', 'boundaries'] :
@@ -103,6 +97,7 @@ def FreeFem_str_to_mesh( FreeFem_str ) :
     boundary_edges = {}
 
     for edge in FreeFem_mesh['boundaries'] :
+        # print(edge)
         boundary_edges.update( FreeFem_edge_to_boundary_edge( edge, triangles ) )
 
     mesh = TriMesh(
@@ -116,31 +111,42 @@ def FreeFem_str_to_mesh( FreeFem_str ) :
     return mesh
 
 
-def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles ) :
-    '''
-    ( start_node, end_node, label_integer ) -> { ( triangle_index, triangle_node_index ) : label_integer }
-    '''
-
-    FreeFem_edge = [ FreeFem_edge[0], FreeFem_edge[1], FreeFem_edge[2] ]
+def find_triangle_index( triangles, start_node, end_node ) :
 
     triangle_index = None
 
     for nodes_order in [ [0,1], [1,2], [-1,0] ] :
         try :
-            triangle_index = triangles[ :, nodes_order].tolist().index( FreeFem_edge[:2] )
+            triangle_index = triangles[ :, nodes_order].tolist().index( [ start_node, end_node ] )
             break
         except :
             pass
 
-    if triangle_index is None :
+    return triangle_index
 
-        print('Could not find boundary edge ' + str(FreeFem_edge) + ' in mesh.')
+
+
+def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles, flip_reversed_edges = True ) :
+    '''
+    ( start_node, end_node, label_integer ) -> { ( triangle_index, triangle_node_index ) : label_integer }
+    '''
+
+    start_node, end_node, label_integer = FreeFem_edge
+
+    triangle_index = find_triangle_index( triangles, start_node, end_node )
+
+    if triangle_index is None and flip_reversed_edges:
+        print('Reversing edge ' + str(FreeFem_edge) + '' )
+        start_node, end_node = end_node, start_node
+        triangle_index = find_triangle_index( triangles, start_node, end_node )
+
+    if triangle_index is None :
+        print('Could not find boundary edge ' + str(FreeFem_edge) + '' )
         return {}
 
     else :
-
-        node_index_in_triangle = triangles[triangle_index].tolist().index( FreeFem_edge[0] )
-        return { ( triangle_index, node_index_in_triangle ) : FreeFem_edge[-1]  }
+        node_index_in_triangle = triangles[triangle_index].tolist().index( start_node )
+        return { ( triangle_index, node_index_in_triangle ) : label_integer  }
 
 def savemesh( mesh, filename ) :
     '''

@@ -31,10 +31,11 @@ pyFreeFem
 __author__ = "Olivier Devauchelle"
 __copyright__ = "Copyright 2020"
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.2"
 
-__all__ = ['TriMesh', 'FreeFemIO', 'FreeFemTools.FreeFemStatics']
+__all__ = ['TriMesh', 'FreeFemIO', 'FreeFemTools.FreeFemStatics', 'edpScript']
 
 from pyFreeFem.FreeFemTools.FreeFemStatics import *
 from pyFreeFem.TriMesh import *
 from pyFreeFem.FreeFemIO import *
+from pyFreeFem.edpScript import *

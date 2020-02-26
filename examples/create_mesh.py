@@ -4,20 +4,18 @@ sys.path.append('./../')
 import pyFreeFem as pyff
 import matplotlib.pyplot as pp
 
-edp_str = '''
+script = pyff.edpScript('''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
-'''
+''')
 
-edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+Th = script.get_output()['Th']
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-
-mesh.plot_triangles( labels = 'index' )
-mesh.plot_nodes( labels = 'index', color = 'tab:blue' )
-mesh.plot_boundaries( color = 'red' )
+Th.plot_triangles( labels = 'index' )
+Th.plot_nodes( labels = 'index', color = 'tab:blue' )
+Th.plot_boundaries( color = 'red' )
 pp.legend( title = 'Boundary label' )
 
 pp.axis('equal')

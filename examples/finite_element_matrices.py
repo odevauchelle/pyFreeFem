@@ -3,24 +3,15 @@ sys.path.append('./../')
 
 import pyFreeFem as pyff
 
-FE_matrix = pyff.stiffness
-for key in FE_matrix.keys() :
-    print( key + ' : ' + FE_matrix[key] )
-
-
-edp_str = '''
+script = pyff.edpScript('''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(20) );
-
 fespace Vh( Th, P1 );
 Vh u,v;
-'''
+''' )
 
-edp_str += pyff.export_matrix_edp( **pyff.stiffness )
+# Create and export stiffness matrix
+script += pyff.VarfBlock( name = 'StM', varf = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
-
-print(FreeFem_output)
-
-stiffness_matrix = pyff.FreeFem_str_to_matrix( FreeFem_output, FE_matrix['matrix_name'] )
-print(stiffness_matrix)
+StM = script.get_output()['StM']
+print(StM)

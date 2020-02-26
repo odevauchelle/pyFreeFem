@@ -9,60 +9,44 @@ import pyFreeFem as pyff
 
 # Create mesh with FreeFem++
 
-edp_str = '''
+script = pyff.edpScript( '''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(150) );
-'''
+''' )
 
-edp_str += pyff.export_mesh_edp() # adds a few lines to edp string
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
+script += pyff.edpOutput( type = 'mesh', name = 'Th' )
 
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
+Th = script.get_output()['Th']
+
 
 # Change mesh
+for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
+    Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
 
-for triangle_index in sample( range( len(mesh.triangles ) ), 20 ) :
-    mesh.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
-
-# Rename boundaries
-new_names = {1:'initial', 2:'new'}
-mesh.rename_boundary( new_names )
-
+Th.rename_boundary( {1:'initial', 2:'new'} )
 
 # Export mesh back to FreeFem
 
-temp_mesh_file = NamedTemporaryFile( suffix = '.msh' )
-pyff.savemesh( filename = temp_mesh_file.name, mesh = mesh )
-
-edp_str = '''
-mesh Th = readmesh( "mesh_file_name" ) ;
-'''.replace( 'mesh_file_name', temp_mesh_file.name )
-
-edp_str += pyff.export_mesh_edp()
+script = pyff.edpScript( pyff.edpInput( name = 'Th', source = Th ) )
 
 # calculate FEM matrices
 
-edp_str +='''
+script +='''
 fespace Vh( Th, P1 ) ;
 Vh u, v ;
 '''
 
-matrix_types = [ pyff.stiffness, pyff.Grammian, pyff.boundary_Grammian( 1, 2 ) ]
+matrices = {
+    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    'Grammian' : 'int2d(Th)( u*v )',
+    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
+}
 
-for matrix_type in matrix_types :
-    edp_str += pyff.export_matrix_edp( **matrix_type )
+for matrix_name in matrices.keys() :
+    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
 
-FreeFem_output = pyff.run_FreeFem( edp_str )
-
-mesh = pyff.FreeFem_str_to_mesh( FreeFem_output )
-mesh.rename_boundary( {1:'initial', 2:'new'} )
-
-matrices = {}
-
-for matrix_type in matrix_types :
-    matrices[ matrix_type['matrix_name'] ] = pyff.FreeFem_str_to_matrix( FreeFem_output, matrix_type['matrix_name'] )
-
+matrices = script.get_output()
 
 ##########################################################################################################
 
@@ -70,8 +54,8 @@ from scipy.sparse.linalg import spsolve
 import numpy as np
 
 epsilon = 1e-4
-M = - matrices[ pyff.stiffness['matrix_name'] ] + 1./epsilon*matrices[ pyff.boundary_Grammian(1,2)['matrix_name'] ]
-Source = matrices[ pyff.Grammian['matrix_name'] ]*np.array( [1]*len( mesh.x ) )
+M = - matrices[ 'stiffness' ] + 1./epsilon*matrices[ 'boundary_Grammian' ]
+Source = matrices[ 'Grammian' ]*np.array( [1]*len( Th.x ) )
 u = spsolve( M, Source )
 
 
@@ -84,14 +68,14 @@ u = spsolve( M, Source )
 figs = {}
 
 figs['mesh'] = pp.figure()
-mesh.plot_triangles( color = 'k', lw = .5, alpha = .2  )
-mesh.plot_boundaries()
+Th.plot_triangles( color = 'k', lw = .5, alpha = .2  )
+Th.plot_boundaries()
 pp.legend(title = 'Boundary')
 x_lim, y_lim = pp.gca().get_xlim(), pp.gca().get_ylim()
 
 figs['field'] = pp.figure()
-pp.tricontourf( mesh, u )
-mesh.plot_boundaries( color = 'black' )
+pp.tricontourf( Th, u )
+Th.plot_boundaries( color = 'black' )
 
 
 for fig_key in figs.keys() :
@@ -106,9 +90,5 @@ for fig_key in figs.keys() :
     pp.xlim(x_lim); pp.ylim(y_lim)
 
     pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_' + fig_key + '.svg' , bbox_inches = 'tight' )
-
-
-
-
 
 pp.show()
