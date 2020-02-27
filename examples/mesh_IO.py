@@ -15,7 +15,7 @@ mesh Th = buildmesh( Circle(150) );
 ''' )
 
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 Th = script.get_output()['Th']
 
@@ -89,6 +89,6 @@ for fig_key in figs.keys() :
 
     pp.xlim(x_lim); pp.ylim(y_lim)
 
-    pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_' + fig_key + '.svg' , bbox_inches = 'tight' )
+    # pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_' + fig_key + '.svg' , bbox_inches = 'tight' )
 
 pp.show()

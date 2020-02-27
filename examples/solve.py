@@ -14,7 +14,7 @@ fespace Vh( Th, P1 );
 Vh u,v;
 ''')
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 matrices = {
     'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
@@ -64,7 +64,7 @@ pp.axis('off')
 pp.xticks([])
 pp.yticks([])
 
-pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_2.svg' , bbox_inches = 'tight' )
+# pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_2.svg' , bbox_inches = 'tight' )
 
 pp.show()
 

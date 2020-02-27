@@ -9,7 +9,7 @@ border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
 ''')
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 Th = script.get_output()['Th']
 
@@ -23,6 +23,6 @@ pp.axis('off')
 pp.xticks([])
 pp.yticks([])
 
-pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
+# pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
 
 pp.show()

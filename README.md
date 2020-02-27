@@ -31,7 +31,7 @@ border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
 ''')
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 Th = script.get_output()['Th']
 
@@ -90,7 +90,7 @@ fespace Vh( Th, P1 );
 Vh u,v;
 ''')
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 matrices = {
     'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
@@ -145,7 +145,7 @@ mesh Th = buildmesh( Circle(150) );
 ''' )
 
 
-script += pyff.edpOutput( type = 'mesh', name = 'Th' )
+script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
 Th = script.get_output()['Th']
 

@@ -18,7 +18,7 @@ class edpOutput :
     '''
     An output from FreeFem++: mesh, matrix or vector.
     '''
-    def __init__( self, type, name, FreeFem_name = None, flag = None, variable_names = None ) :
+    def __init__( self, data_type, name, FreeFem_name = None, flag = None, variable_names = None ) :
         '''
         edpOutput( self, type, name, FreeFem_name = None, flag = None, variable_names = None )
 
@@ -30,7 +30,7 @@ class edpOutput :
             variable_names (dict) : translation dictionnary for FreeFem++ variables
         '''
 
-        self.type = type
+        self.type = data_type
         self.name = name
 
         if FreeFem_name is None :
@@ -79,15 +79,15 @@ class edpInput :
     Input into FreeFem.
     '''
 
-    def __init__( self, source, name, FreeFem_name = None, source_type = None, tempfile = None, declare = True ) :
+    def __init__( self, name, source = None, FreeFem_name = None, data_type = None, tempfile = None, declare = True, variable_names = None ) :
         '''
-        edpInput( source, name, FreeFem_name = None, source_type = None )
+        edpInput( source, name, FreeFem_name = None, data_type = None )
 
         Arguments:
             source ( TriMesh, list, array, sparse matrix ) : to be loaded into FreeFem++
             name (str) : input name
             FreeFem_name (str) : name of the corresponding FreeFem++ variable
-            source_type (str) : mesh, vector, matrix or number
+            data_type (str) : mesh, vector, matrix or number
         '''
 
         self.source = source
@@ -95,12 +95,17 @@ class edpInput :
         self.tempfile = tempfile # including when it's None
         self.declare = declare
 
+        if variable_names is None :
+            self.variable_names = default_variable_names
+        else :
+            self.variable_names = variable_names
+
         if FreeFem_name is None :
             self.FreeFem_name = FreeFemize( name, type = 'variable' )
         else :
             self.FreeFem_name = FreeFem_name
 
-        if source_type is None :
+        if data_type is None :
 
             if type(source) is TriMesh :
                 self.type = 'mesh'
@@ -121,42 +126,42 @@ class edpInput :
                 self.type = None
 
         else :
-            self.type = source_type
+            self.type = data_type
 
     def get_edp( self, **kwargs ) :
 
         edp_str = ''
 
-        if kwargs is None :
-            kwargs = {}
+        if self.source is None :
+            source = kwargs[ self.name ] # the source is input when calling get_edp
+
+        else :
+            source = self.source
 
         if self.type is 'mesh' :
 
             if self.tempfile is None :
                 self.tempfile = NamedTemporaryFile( suffix = '.msh' )
 
-            savemesh( filename = self.tempfile.name, mesh = self.source )
+            savemesh( filename = self.tempfile.name, mesh = source )
 
             if self.declare :
                 edp_str += 'mesh Th;\n'
 
             edp_str += 'Th = readmesh( "mesh_file_name" ) ;\n'
 
-            kwargs.update( { 'mesh_file_name' : self.tempfile.name, 'Th' : self.FreeFem_name } )
+            variable_names = self.variable_names
+            variable_names.update( { 'mesh_file_name' : self.tempfile.name, 'Th' : self.FreeFem_name } )
 
-            for key in kwargs.keys() :
-                edp_str = edp_str.replace( key, kwargs[key] )
+            for key in variable_names.keys() :
+                edp_str = edp_str.replace( key, variable_names[key] )
 
         elif self.type is 'vector' :
 
             if self.tempfile is None :
                 self.tempfile = NamedTemporaryFile( suffix = '.ffv' )
 
-            # for value in self.source :
-            #     str_value = ( str( value ) + '\n' ).encode('utf8')
-            #     self.tempfile.write( str_value )
-
-            savetxt( self.tempfile.name, self.source ) # using the file handle would be better, but then writing doesn't complete
+            savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
 
             if self.declare :
                 edp_str += 'Vh vector_name;\n'
@@ -172,10 +177,11 @@ class edpInput :
                 }
             '''
 
-            kwargs.update( { 'vector_file_name' : self.tempfile.name, 'vector_name' : self.FreeFem_name } )
+            variable_names = self.variable_names
+            variable_names.update( { 'vector_file_name' : self.tempfile.name, 'vector_name' : self.FreeFem_name } )
 
-            for key in kwargs.keys() :
-                edp_str = edp_str.replace( key, kwargs[key] )
+            for key in variable_names.keys() :
+                edp_str = edp_str.replace( key, variable_names[key] )
 
         return edp_str
 
@@ -226,12 +232,12 @@ class edpBlock :
         else :
             self.header = header
 
-    def get_edp( self ) :
+    def get_edp( self, **kwargs_input ) :
 
         edp = headerFrame( self.header + ' START' )
 
         for input in self.input :
-            edp += input.get_edp()
+            edp += input.get_edp( **kwargs_input )
 
         edp += self.content + '\n\n'
 
@@ -299,7 +305,7 @@ class edpScript :
 
         return self
 
-    def get_edp(self) :
+    def get_edp( self, **kwargs_input ) :
 
         edp = ''
 
@@ -307,7 +313,7 @@ class edpScript :
             edp += headerFrame( FreeFemize( self.name, type = 'header' ) )
 
         for block in self.blocks :
-            edp += block.get_edp()
+            edp += block.get_edp( **kwargs_input )
 
         return edp
 
@@ -324,8 +330,8 @@ class edpScript :
 
                     input.tempfile.close()
 
-    def run( self, **kwargs ) :
-        freefem_output = run_FreeFem( self.get_edp(), **kwargs )
+    def run( self, **kwargs_input ) :
+        freefem_output = run_FreeFem( self.get_edp( **kwargs_input ) )
         self.clean_temp_files()
         return freefem_output
 
@@ -339,8 +345,8 @@ class edpScript :
 
         return FreeFem_data
 
-    def get_output( self ) :
-        return self.parse( self.run() )
+    def get_output( self, **kwargs_input ) :
+        return self.parse( self.run( **kwargs_input ) )
 
 
 def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = True ) :
@@ -361,7 +367,7 @@ def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = 
             edp_str = edp_str.replace( key, variable_names[key] )
 
         if output :
-            output = edpOutput( type = 'matrix', name = name, FreeFem_name = FreeFem_name )
+            output = edpOutput( data_type = 'matrix', name = name, FreeFem_name = FreeFem_name )
 
         else :
             output = None
