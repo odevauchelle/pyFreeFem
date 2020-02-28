@@ -1,0 +1,63 @@
+
+/////////////////
+//
+// # after: https://www.ljll.math.upmc.fr/pipermail/freefempp/2008/000164.html
+//
+/////////////////
+//
+// mesh Th=square(10,10);
+// int np1=0;
+// int1d(Th,1,qfe=qf1pElump)( real(np1++));
+// // compte the number of quadrature point on border 1
+// real[int] xx1(np1),yy1(np1);
+//
+// {
+// int i=0,j=0;// i is local to the block {}
+// int1d(Th,1,qfe=qf1pElump)((xx1[i++]=x)+(yy1[j++]=y));
+// }
+// cout << " xx1 = " << xx1 << endl;
+// cout << " yy1 = " << yy1 << endl;
+// remark i = 0, np1, i+= 2 :
+//  given edges: of the border : (xx1[i],yy1[i]),(xx1[i+1],yy1[i+1]),
+// no ordering is done.
+
+
+/////////////////
+//
+// # after: https://www.ljll.math.upmc.fr/pipermail/freefempp/2013-July/002801.html
+//
+/////////////////
+
+// *******************************************//
+// mesh
+mesh Th = square(3,3);
+//plot(Th);
+fespace Vh(Th,P1);
+
+
+int nboundary;
+int1d(Th,qfe=qf1pE)((nboundary++)*1.);  // count the number of vertices on the boundary
+
+// hack to get the indices of the vertices
+Vh index;
+index[]=(0:Vh.ndof-1);
+
+plot(index);
+
+int[int] aux(2*nboundary),indnod(nboundary);
+int m=0;
+int1d(Th,1,2,qfe=qf1pElump)((aux[m++]=floor(index+0.5))*1.);
+
+index=0;
+for(int i=0;i<nboundary;i++) index[][aux(2*i+1)]=aux[2*i];
+indnod[0]=aux[1];
+for(int i=1;i<nboundary;i++) indnod(i)=index[][indnod(i-1)];
+
+// indnod stores the indices of the boundary vertices
+cout << indnod << endl;
+
+
+ // *********************************************//
+
+
+// see also https://www.ljll.math.upmc.fr/pipermail/freefempp/2009/000335.html

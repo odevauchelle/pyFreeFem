@@ -75,9 +75,6 @@ def FreeFem_str_to_vector( Freefem_str, dtype = 'float' ) :
 
 def FreeFem_str_to_mesh( FreeFem_str ) :
 
-    '''
-    '''
-
     FreeFem_str = '\n' + FreeFem_str + '\n'
 
     FreeFem_mesh = {}
