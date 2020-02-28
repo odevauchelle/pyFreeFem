@@ -67,12 +67,6 @@ for (int ne = 0; ne < Th.nbe; ne++ )
 	}
 ''', flagize( 'boundaries' ) )
 
-# after: https://www.ljll.math.upmc.fr/pipermail/freefempp/2008/000164.html
-
-'''
-int[int] AllLabels = labels(Th);
-'''
-
 
 def export_mesh_edp( **kwargs ) :
 

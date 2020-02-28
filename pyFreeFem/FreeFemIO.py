@@ -29,6 +29,7 @@ import csv
 import subprocess
 from scipy.sparse import csr_matrix
 from tempfile import NamedTemporaryFile
+import warnings
 
 from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
@@ -133,12 +134,12 @@ def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles, flip_reversed_edges 
     triangle_index = find_triangle_index( triangles, start_node, end_node )
 
     if triangle_index is None and flip_reversed_edges:
-        print('Reversing edge ' + str(FreeFem_edge) + '' )
+        warnings.warn('Reversing some edges')
         start_node, end_node = end_node, start_node
         triangle_index = find_triangle_index( triangles, start_node, end_node )
 
     if triangle_index is None :
-        print('Could not find boundary edge ' + str(FreeFem_edge) + '' )
+        warnings.warn('Could not find some boundary edges. They are lost.' )
         return {}
 
     else :
