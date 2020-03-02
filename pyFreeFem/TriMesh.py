@@ -101,6 +101,20 @@ class TriMesh( mptri.Triangulation ) :
 
         self.boundary_edges = boundary_edges
 
+    def add_boundary_edges( self, boundary_edges, data_type = None ) :
+
+        if data_type is None :
+
+            try :
+                self.boundary_edges.update( boundary_edges )
+
+            except :
+                for boundary_edge in boundary_edges
+                    self.boundary_edges.update( node_edge_to_triangle_edge( boundary_edge ) )
+
+
+
+
     def get_boundary_label_conversion( self ) :
         return label_conversion( self.boundary_edges.values() )
 

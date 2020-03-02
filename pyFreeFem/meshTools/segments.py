@@ -161,3 +161,48 @@ if __name__ == '__main__' :
     ordered_edges = reorder_boundary( [ [1,12], [12,3], [7, 14], [8, 7], [14, 20], [7, 9], [12, 9] ] )
     print( ordered_edges  )
     print( ordered_edges_to_segments( ordered_edges  ) )
+
+def find_triangle_index( triangles, start_node, end_node ) :
+    '''
+    find_triangle_index( triangles, start_node, end_node )
+        triangles : triangulation
+        start_node, end_node : nodes indices of edge
+
+    returns the triangle_index of this edge. There can only be one, since orientation is strict.
+    '''
+
+    triangle_index = None
+
+    for nodes_order in [ [0,1], [1,2], [-1,0] ] :
+        try :
+            triangle_index = triangles[ :, nodes_order].tolist().index( [ start_node, end_node ] )
+            break
+        except :
+            pass
+
+    return triangle_index
+
+def node_edge_to_triangle_edge( node_edge, triangles, flip_reversed_edges = True, label = None ) :
+    '''
+    ( start_node, end_node, label ) -> { ( triangle_index, triangle_node_index ) : label }
+    '''
+
+    try :
+        start_node, end_node, label = node_edge
+    except :
+        start_node, end_node = node_edge # label is then entered as parameter
+
+    triangle_index = find_triangle_index( triangles, start_node, end_node )
+
+    if triangle_index is None and flip_reversed_edges:
+        warnings.warn('Reversing some edges')
+        start_node, end_node = end_node, start_node
+        triangle_index = find_triangle_index( triangles, start_node, end_node )
+
+    if triangle_index is None :
+        warnings.warn('Could not find some boundary edges. They are lost.' )
+        return {}
+
+    else :
+        node_index_in_triangle = triangles[triangle_index].tolist().index( start_node )
+        return { ( triangle_index, node_index_in_triangle ) : label  }
