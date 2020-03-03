@@ -151,16 +151,6 @@ def triangle_edge_to_node_edge( triangle_edge, triangles ) :
 
     return start_node_index, end_node_index
 
-if __name__ == '__main__' :
-
-    labels = ['toto', 2, 1]
-
-    none_and_int = label_conversion( ['toto', 2, 1] )
-    print( none_and_int )
-
-    ordered_edges = reorder_boundary( [ [1,12], [12,3], [7, 14], [8, 7], [14, 20], [7, 9], [12, 9] ] )
-    print( ordered_edges  )
-    print( ordered_edges_to_segments( ordered_edges  ) )
 
 def find_triangle_index( triangles, start_node, end_node ) :
     '''
@@ -182,15 +172,12 @@ def find_triangle_index( triangles, start_node, end_node ) :
 
     return triangle_index
 
-def node_edge_to_triangle_edge( node_edge, triangles, flip_reversed_edges = True, label = None ) :
+def edge_nodes_to_triangle_edge( edge_nodes, triangles, flip_reversed_edges = True ) :
     '''
-    ( start_node, end_node, label ) -> { ( triangle_index, triangle_node_index ) : label }
+    ( start_node, end_node ) -> ( triangle_index, start_node_in_triangle )
     '''
 
-    try :
-        start_node, end_node, label = node_edge
-    except :
-        start_node, end_node = node_edge # label is then entered as parameter
+    start_node, end_node = edge_nodes
 
     triangle_index = find_triangle_index( triangles, start_node, end_node )
 
@@ -201,8 +188,63 @@ def node_edge_to_triangle_edge( node_edge, triangles, flip_reversed_edges = True
 
     if triangle_index is None :
         warnings.warn('Could not find some boundary edges. They are lost.' )
-        return {}
+        return None
 
     else :
-        node_index_in_triangle = triangles[triangle_index].tolist().index( start_node )
-        return { ( triangle_index, node_index_in_triangle ) : label  }
+        start_node_in_triangle = triangles[triangle_index].tolist().index( start_node )
+        return triangle_index, start_node_in_triangle
+
+def nodes_to_edges( nodes, label = None ) :
+    '''
+    node_indices, label -> list of edges
+    '''
+    return [ [ i, i+1, label ] for i in nodes[:-1] ]
+
+def edges_to_boundary_edges( edges ) :
+    '''
+    start_node, end_node, label -> { (start_node, end_node) : label }
+    or
+    triangle, start_node, label -> { (triangle, start_node) : label }
+    '''
+
+    edges_dict = {}
+
+    for edge in edges :
+        edges_dict.update( { tuple( edge[:-1] ) : edge[-1] } )
+
+    return edges_dict
+
+if __name__ == '__main__' :
+
+    from pylab import *
+    import matplotlib.tri as tri
+
+    theta =  linspace( 0, 2*pi, 6 )
+    x, y = cos(theta), sin(theta)
+    x, y = append(x,0), append(y,0)
+
+    triangles = array( [ [i, i + 1, len(x)-1] for i in range(len(x)-1) ] )
+
+    edge_nodes = range(len(x)-1)
+    label = 'toto'
+
+    print(triangles)
+
+    mesh = tri.Triangulation( x, y, triangles = triangles )
+
+    triplot(mesh)
+    plot( x[edge_nodes], y[edge_nodes] )
+
+    print( edges_to_boundary_edges( nodes_to_edges( edge_nodes, label ) ) )
+
+    axis('equal')
+    show()
+
+    # labels = ['toto', 2, 1]
+    #
+    # none_and_int = label_conversion( ['toto', 2, 1] )
+    # print( none_and_int )
+    #
+    # ordered_edges = reorder_boundary( [ [1,12], [12,3], [7, 14], [8, 7], [14, 20], [7, 9], [12, 9] ] )
+    # print( ordered_edges  )
+    # print( ordered_edges_to_segments( ordered_edges  ) )
