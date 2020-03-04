@@ -40,4 +40,4 @@ The refined mesh looks like this:
 
 ![Initial mesh](../figures/adaptmesh_1.svg)
 
-In fact, this refinement procedure is encapsulated into the [adapmesh](./documentation/build_your_own_mesh.md) function of pyFreeFem, which wraps the adaptmesh function of FreeFem++.
+In fact, this refinement procedure is encapsulated into the [adapmesh](./build_your_own_mesh.md) function of pyFreeFem, which wraps the adaptmesh function of FreeFem++.
