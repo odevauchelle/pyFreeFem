@@ -5,7 +5,6 @@ sys.path.append('./../../')
 
 import pyFreeFem as pyff
 
-
 theta =  linspace( 0, pi, 25 )
 top = cos(theta), 0.5*sin(theta)
 
@@ -22,13 +21,26 @@ Th = pyff.TriMesh( x, y, triangles )
 Th.add_boundary_edges( range( len( top[0] ) ), 'top' )
 Th.add_boundary_edges( list( range( len( top[0] ) - 1, len( x ) - 1 ) ) + [0], 'bottom' )
 
-Th = pyff.adaptmesh( Th )
+Th_refined = pyff.adaptmesh( Th, hmax = .1, iso = 1 )
 
-Th.plot_triangles( lw = 1, alpha = .5 )
-Th.plot_boundaries()
+# plots
 
-legend()
-axis('equal')
-axis('off')
-xticks([]), yticks([])
+fig_index = 0
+
+for Th in [ Th, Th_refined ] :
+
+    figure( fig_index, figsize = (5,5))
+
+    Th.plot_triangles( lw = .75, alpha = .5 )
+    Th.plot_boundaries()
+
+    legend()
+    axis('equal')
+    axis('off')
+    xticks([]), yticks([])
+
+    # savefig( './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_' + str(fig_index) + '.svg' , bbox_inches = 'tight' )
+
+    fig_index += 1
+
 show()
