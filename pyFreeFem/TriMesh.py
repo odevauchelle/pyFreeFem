@@ -101,18 +101,26 @@ class TriMesh( mptri.Triangulation ) :
 
         self.boundary_edges = boundary_edges
 
-    def add_boundary_edges( self, boundary_edges, data_type = None ) :
+    def add_boundary_edges( self, boundary_edges, label = None ) :
 
-        if data_type is None :
+        try :
+            # assume { (triangle_index, node_in_triangle) : label, ...  }
+            self.boundary_edges.update( boundary_edges )
+
+        except :
 
             try :
-                self.boundary_edges.update( boundary_edges )
+                # assume [ [ start_node, end_node, label ], ... ]
+                self.boundary_edges.update( edges_to_boundary_edges( edges ) )
 
             except :
-                for boundary_edge in boundary_edges
-                    self.boundary_edges.update( node_edge_to_triangle_edge( boundary_edge ) )
+                # assume [ first_node, second_node, ... ]
+                if label is None :
+                    invent_label( self.boundary_edges.values() )
 
+                edges = [ list( edge_nodes_to_triangle_edge( edge[:-1], self.triangles ) ) + [edge[-1]] for edge in nodes_to_edges( boundary_edges, label = label ) ]
 
+                self.boundary_edges.update( edges_to_boundary_edges( edges ) )
 
 
     def get_boundary_label_conversion( self ) :

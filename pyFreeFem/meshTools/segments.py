@@ -196,9 +196,9 @@ def edge_nodes_to_triangle_edge( edge_nodes, triangles, flip_reversed_edges = Tr
 
 def nodes_to_edges( nodes, label = None ) :
     '''
-    node_indices, label -> list of edges
+    node_indices, label -> [ [ start_node_index, end_node_index, label ], ... ]
     '''
-    return [ [ i, i+1, label ] for i in nodes[:-1] ]
+    return list( zip( *[ nodes[:-1], nodes[1:], [label]*( len( nodes ) - 1 ) ] ) )
 
 def edges_to_boundary_edges( edges ) :
     '''
@@ -213,6 +213,10 @@ def edges_to_boundary_edges( edges ) :
         edges_dict.update( { tuple( edge[:-1] ) : edge[-1] } )
 
     return edges_dict
+
+def invent_label( existing_labels ) :
+    existing_int_labels = [ label for label in existing_labels if type(label) is int ]
+    return max( existing_int_labels + [0] ) + 1
 
 if __name__ == '__main__' :
 
@@ -236,15 +240,6 @@ if __name__ == '__main__' :
     plot( x[edge_nodes], y[edge_nodes] )
 
     print( edges_to_boundary_edges( nodes_to_edges( edge_nodes, label ) ) )
-
+    print( invent_label( ['toto','tortue'] ) )
     axis('equal')
     show()
-
-    # labels = ['toto', 2, 1]
-    #
-    # none_and_int = label_conversion( ['toto', 2, 1] )
-    # print( none_and_int )
-    #
-    # ordered_edges = reorder_boundary( [ [1,12], [12,3], [7, 14], [8, 7], [14, 20], [7, 9], [12, 9] ] )
-    # print( ordered_edges  )
-    # print( ordered_edges_to_segments( ordered_edges  ) )
