@@ -33,9 +33,10 @@ __copyright__ = "Copyright 2020"
 __license__ = "GPL"
 __version__ = "0.2"
 
-__all__ = ['TriMesh', 'FreeFemIO', 'FreeFemTools.FreeFemStatics', 'edpScript']
+__all__ = ['TriMesh', 'FreeFemIO', 'FreeFemTools.FreeFemStatics', 'edpScript', 'pyFreeFem.functions']
 
 from pyFreeFem.FreeFemTools.FreeFemStatics import *
 from pyFreeFem.TriMesh import *
 from pyFreeFem.FreeFemIO import *
 from pyFreeFem.edpScript import *
+from pyFreeFem.functions import *

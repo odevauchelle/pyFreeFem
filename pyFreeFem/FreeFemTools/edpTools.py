@@ -1,6 +1,24 @@
 import re
 import unicodedata
 
+def edp_function( function_name, *args, **kwargs ) :
+
+    edp_str = function_name + '('
+
+    for arg in args :
+        edp_str += ' ' + str(arg) + ','
+
+    for arg_name in kwargs.keys() :
+        edp_str += ' ' + arg_name + ' = ' + str( kwargs[arg_name] ) + ','
+
+    if edp_str[-1] is ',' :
+        edp_str = edp_str[:-1]
+
+    edp_str += ' )'
+
+    return edp_str
+
+
 def capitalize_first_letter(s):
     try :
         return s[0].upper() + s[1:]
@@ -37,6 +55,9 @@ def flagize( name ) :
     return '# FLAG > ' + FreeFemize( name, type = 'header' )
 
 if __name__ == '__main__' :
+
+    print( edp_function( 'adaptmesh', 'Th', err = 0.2  )  )
+
     print( FreeFemize( 'u' ) )
     print( FreeFemize( 'toto_ça$$$_vélo$_35' ) )
     print( headerFrame(FreeFemize( 'toto_ça$$$____vélo$_35' , type = 'header' )) )

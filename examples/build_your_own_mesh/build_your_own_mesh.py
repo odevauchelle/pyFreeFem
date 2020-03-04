@@ -22,6 +22,7 @@ Th = pyff.TriMesh( x, y, triangles )
 Th.add_boundary_edges( range( len( top[0] ) ), 'top' )
 Th.add_boundary_edges( list( range( len( top[0] ) - 1, len( x ) - 1 ) ) + [0], 'bottom' )
 
+Th = pyff.adaptmesh( Th )
 
 Th.plot_triangles( lw = 1, alpha = .5 )
 Th.plot_boundaries()
