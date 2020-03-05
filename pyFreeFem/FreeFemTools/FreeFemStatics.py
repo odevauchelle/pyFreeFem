@@ -23,11 +23,20 @@
 # Boltzmann Distribution of Sediment Transport, A. Abramian, O. Devauchelle,
 # G. Seizilles, E. Lajeunesse, Physical Review Letters, 123, 014501, 2019
 
+
+
+
+from .edpTools import flagize
+
 separator = '''
 ///////////////////////////////////////////////////////\n
 '''
 
-from .edpTools import flagize
+default_variable_names = {
+    'base_func' : 'u',
+    'test_func' : 'v'
+    }
+
 
 ###################################
 #

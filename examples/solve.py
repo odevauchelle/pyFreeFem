@@ -16,14 +16,11 @@ Vh u,v;
 
 script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
 
-matrices = {
-    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
-    'Grammian' : 'int2d(Th)( u*v )',
-    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
-}
-
-for matrix_name in matrices.keys() :
-    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
+script += pyff.VarfScript(
+    stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    Grammian = 'int2d(Th)( u*v )',
+    boundary_Grammian = 'int1d(Th, 1, 2)( u*v )'
+    )
 
 ff_output = script.get_output()
 Th = ff_output['Th']

@@ -5,14 +5,9 @@ import sys
 sys.path.append('./../')
 
 from .TriMesh import TriMesh
-from .FreeFemTools.edpTools import FreeFemize, headerFrame, flagize
+from .FreeFemTools.edpTools import *
 from .FreeFemTools.FreeFemStatics import *
 from .FreeFemIO import *
-
-default_variable_names = {
-    'base_func' : 'u',
-    'test_func' : 'v'
-    }
 
 class edpOutput :
     '''
@@ -347,84 +342,3 @@ class edpScript :
 
     def get_output( self, **kwargs_input ) :
         return self.parse( self.run( **kwargs_input ) )
-
-
-def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = True ) :
-
-        if FreeFem_name is None :
-            FreeFem_name = FreeFemize( name, type = 'variable' )
-
-        if variable_names is None :
-            variable_names = default_variable_names
-
-        edp_str = '''
-        varf Vmatrix_name( base_func, test_func ) = variational_formulation ;
-        matrix Mmatrix_name = Vmatrix_name( Vh, Vh ) ;
-        '''
-        variable_names.update( { 'Mmatrix_name' : FreeFem_name, 'Vmatrix_name' : 'V' + FreeFem_name, 'variational_formulation' : varf } )
-
-        for key in variable_names.keys() :
-            edp_str = edp_str.replace( key, variable_names[key] )
-
-        if output :
-            output = edpOutput( data_type = 'matrix', name = name, FreeFem_name = FreeFem_name )
-
-        else :
-            output = None
-
-        return edpBlock( content = edp_str, output = output )
-
-
-
-
-# if __name__ == '__main__' :
-#
-#     from pylab import *
-#
-#     script = edpScript( name = 'build_mesh',
-#         blocks = edpBlock(
-#             content = '''
-#             border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-#             mesh Th = buildmesh( Circle(15) );
-#             ''')
-#         )
-#
-#     script += edpBlock(
-#         name = 'adapt_mesh',
-#         content = 'Th = adaptmesh( Th, 1, hmax = .01 );',
-#         output = edpOutput( type = 'mesh', name = 'Th_refined', FreeFem_name = 'Th' )
-#         )
-#
-#     Th = script.get_output()['Th_refined']
-#
-#     script = edpScript('')
-#
-#     u = sin( Th.x*pi*5 + 2*Th.y**3 )
-#
-#     script += edpBlock( input = edpInput( name = 'Th', source = Th ) )
-#
-#     script += '''
-#     fespace Vh( Th, P1 );
-#     '''
-#
-#     script += edpBlock( input = edpInput( name = 'u', FreeFem_name = 'u', source = u ) )
-#
-#     script += edpBlock(
-#         name = 'vector output',
-#         output = edpOutput( type = 'vector', name = 'u', FreeFem_name = 'u' )
-#         )
-#
-#
-#
-#     # script += edpBlock(
-#     #     name = 'stiffness_matrix',
-#     #     content = create_varf_matrix( **stiffness ),
-#     #     output = edpOutput( type = 'matrix', name = 'stiffness', FreeFem_name = 'Mstiffness', variable_names = stiffness )
-#     #     )
-#
-#     FFdata = script.get_output()
-#     tricontourf( Th, FFdata['u'] )
-#     Th.plot_triangles( alpha = .2, color = 'w', lw = 1 )
-#
-#     axis('equal')
-#     show()

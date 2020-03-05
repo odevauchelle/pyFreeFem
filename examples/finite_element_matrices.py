@@ -11,7 +11,6 @@ Vh u,v;
 ''' )
 
 # Create and export stiffness matrix
-script += pyff.VarfBlock( name = 'StM', varf = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
-
-StM = script.get_output()['StM']
-print(StM)
+script += pyff.VarfScript( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )')
+stiffness = script.get_output()['stiffness']
+print(stiffness)
