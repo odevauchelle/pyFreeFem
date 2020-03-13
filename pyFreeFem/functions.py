@@ -25,7 +25,7 @@ def VarfScript( **matrices ) :
     return script
 
 
-def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = True ) :
+def VarfBlock( varf, name, variable_names = None, FreeFem_name = None, output = True ) :
     '''
     edpBlock = VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = True )
     '''
@@ -33,13 +33,17 @@ def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = 
         FreeFem_name = FreeFemize( name, type = 'variable' )
 
     if variable_names is None :
-        variable_names = default_variable_names
+        variable_names = {}
+
+    local_default_variable_names = default_variable_names.copy()
+    local_default_variable_names.update( variable_names )
+    variable_names = local_default_variable_names.copy()
+    variable_names.update( { '_matrix_name_' : FreeFem_name, '_variational_formulation_' : varf } )
 
     edp_str = '''
-    varf Vmatrix_name( base_func, test_func ) = variational_formulation ;
-    matrix Mmatrix_name = Vmatrix_name( Vh, Vh ) ;
+    varf V_matrix_name_( _u_, _v_ ) = _variational_formulation_ ;
+    matrix M_matrix_name_ = V_matrix_name_( _VhU_, _VhV_ );
     '''
-    variable_names.update( { 'Mmatrix_name' : FreeFem_name, 'Vmatrix_name' : 'V' + FreeFem_name, 'variational_formulation' : varf } )
 
     for names in variable_names.items() :
         edp_str = edp_str.replace( *names )
@@ -80,7 +84,7 @@ def adaptmesh( Th, u = None, **kwargs ):
 
 
     else :
-        script += 'fespace Vh( Th, P1 );'
+        script += 'fespace _Vh_( _Th_, P1 );'
         script += edpInput( name = 'u', data_type = 'vector' )
         script += 'Th = ' + edp_function( 'adaptmesh', 'Th', 'u', **kwargs )  + ';'
 

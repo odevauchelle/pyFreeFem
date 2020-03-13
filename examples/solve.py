@@ -35,7 +35,7 @@ pp.axis('off')
 pp.xticks([])
 pp.yticks([])
 
-pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
+# pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
 
 x_lim, y_lim = pp.gca().get_xlim(), pp.gca().get_ylim()
 

@@ -47,14 +47,14 @@ class edpOutput :
 
         if self.type == 'matrix' :
             variable_names = self.variable_names
-            variable_names.update( { 'Mmatrix_name' : self.FreeFem_name } )
+            variable_names.update( { '_matrix_name_' : self.FreeFem_name } )
             edp = export_matrix_edp( create_varf = False, create_and_add_flags = False, **variable_names )
 
         elif self.type == 'vector' :
-            edp = export_vector_edp( base_func = self.FreeFem_name )
+            edp = export_vector_edp( _u_ = self.FreeFem_name )
 
         elif self.type == 'mesh' :
-            edp = export_mesh_edp( Th = self.FreeFem_name )
+            edp = export_mesh_edp( _Th_ = self.FreeFem_name )
 
         return add_flags( edp, self.flag )
 
@@ -141,12 +141,12 @@ class edpInput :
             savemesh( filename = self.tempfile.name, mesh = source )
 
             if self.declare :
-                edp_str += 'mesh Th;\n'
+                edp_str += 'mesh _Th_;\n'
 
-            edp_str += 'Th = readmesh( "mesh_file_name" ) ;\n'
+            edp_str += '_Th_ = readmesh( "mesh_file_name" ) ;\n'
 
             variable_names = self.variable_names
-            variable_names.update( { 'mesh_file_name' : self.tempfile.name, 'Th' : self.FreeFem_name } )
+            variable_names.update( { '_mesh_file_name_' : self.tempfile.name, '_Th_' : self.FreeFem_name } )
 
             for key in variable_names.keys() :
                 edp_str = edp_str.replace( key, variable_names[key] )
@@ -159,21 +159,21 @@ class edpInput :
             savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
 
             if self.declare :
-                edp_str += 'Vh vector_name;\n'
+                edp_str += '_Vh_ _vector_name_;\n'
 
             edp_str += '''
                 {
-                    ifstream InputFile("vector_file_name");
+                    ifstream InputFile("_vector_file_name_");
 
-                    for(int i = 0; i < vector_name.n; i++)
+                    for(int i = 0; i < _vector_name_.n; i++)
                         {
-                        InputFile >> vector_name[][i];
+                        InputFile >> _vector_name_[][i];
                         }
                 }
             '''
 
             variable_names = self.variable_names
-            variable_names.update( { 'vector_file_name' : self.tempfile.name, 'vector_name' : self.FreeFem_name } )
+            variable_names.update( { '_vector_file_name_' : self.tempfile.name, '_vector_name_' : self.FreeFem_name } )
 
             for key in variable_names.keys() :
                 edp_str = edp_str.replace( key, variable_names[key] )
