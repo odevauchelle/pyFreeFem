@@ -19,8 +19,8 @@ def VarfScript( **matrices ) :
 
     script = edpScript('')
 
-    for matrix_name in matrices.keys() :
-        script += VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
+    for name, varf in matrices.items() :
+        script += VarfBlock( name = name, varf = varf )
 
     return script
 
@@ -41,8 +41,8 @@ def VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = 
     '''
     variable_names.update( { 'Mmatrix_name' : FreeFem_name, 'Vmatrix_name' : 'V' + FreeFem_name, 'variational_formulation' : varf } )
 
-    for key in variable_names.keys() :
-        edp_str = edp_str.replace( key, variable_names[key] )
+    for names in variable_names.items() :
+        edp_str = edp_str.replace( *names )
 
     if output :
         output = edpOutput( data_type = 'matrix', name = name, FreeFem_name = FreeFem_name )
