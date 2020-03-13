@@ -48,7 +48,7 @@ class edpOutput :
         if self.type == 'matrix' :
             variable_names = self.variable_names
             variable_names.update( { '_matrix_name_' : self.FreeFem_name } )
-            edp = export_matrix_edp( create_varf = False, create_and_add_flags = False, **variable_names )
+            edp = export_matrix_edp( create_and_add_flags = False, **variable_names )
 
         elif self.type == 'vector' :
             edp = export_vector_edp( _u_ = self.FreeFem_name )

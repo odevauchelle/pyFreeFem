@@ -105,16 +105,12 @@ def export_mesh_edp( **kwargs ) :
 #
 #     return  edp_str
 
-def export_matrix_edp( create_varf = True, create_and_add_flags = True, **kwargs ) :
+def export_matrix_edp( create_and_add_flags = True, **kwargs ) :
 
     edp_str = ''
-
-    if create_varf :
-        edp_str += create_varf_matrix()
-        edp_str += separator
+    # M_matrix_name_.resize( _u_[].n, _v_[].n );
 
     export_edp_str = '''
-    M_matrix_name_.resize( _u_[].n, _v_[].n );
     cout << M_matrix_name_;
     '''
 

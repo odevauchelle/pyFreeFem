@@ -9,36 +9,26 @@ from .FreeFemTools.edpTools import edp_function, FreeFemize, headerFrame, flagiz
 from .FreeFemTools.FreeFemStatics import default_variable_names
 from .edpScript import *
 
-def VarfScript( **matrices ) :
-    '''
-    Example :
-        edpScript = VarfScript( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )', ... )
 
-    The argument's name defines the matrix name in the FreeFem ouput.
-    '''
-
-    script = edpScript('')
-
-    for name, varf in matrices.items() :
-        script += VarfBlock( name = name, varf = varf )
-
-    return script
-
-
-def VarfBlock( varf, name, variable_names = None, FreeFem_name = None, output = True ) :
+def VarfBlock( varf, name, functions = None, fespaces = None, FreeFem_name = None, output = True ) :
     '''
     edpBlock = VarfBlock( varf, name, FreeFem_name = None, variable_names = None, output = True )
     '''
     if FreeFem_name is None :
         FreeFem_name = FreeFemize( name, type = 'variable' )
 
-    if variable_names is None :
-        variable_names = {}
+    variable_names = default_variable_names.copy()
 
-    local_default_variable_names = default_variable_names.copy()
-    local_default_variable_names.update( variable_names )
-    variable_names = local_default_variable_names.copy()
+    if not functions is None :
+        variable_names.update( { '_u_' : functions[0], '_v_' : functions[1]} )
+
+    if not fespaces is None :
+        variable_names.update( { '_VhU_' : fespaces[0], '_VhV_' : fespaces[1]} )
+
     variable_names.update( { '_matrix_name_' : FreeFem_name, '_variational_formulation_' : varf } )
+
+    print(variable_names)
+
 
     edp_str = '''
     varf V_matrix_name_( _u_, _v_ ) = _variational_formulation_ ;
@@ -56,6 +46,20 @@ def VarfBlock( varf, name, variable_names = None, FreeFem_name = None, output = 
 
     return edpBlock( content = edp_str, output = output )
 
+def VarfScript( functions = None, fespaces = None, **matrices ) :
+    '''
+    Example :
+        edpScript = VarfScript( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )', ... )
+
+    The argument's name defines the matrix name in the FreeFem ouput.
+    '''
+
+    script = edpScript('')
+
+    for name, varf in matrices.items() :
+        script += VarfBlock( name = name, varf = varf, functions = functions, fespaces = fespaces )
+
+    return script
 
 def adaptmesh( Th, u = None, **kwargs ):
     '''
