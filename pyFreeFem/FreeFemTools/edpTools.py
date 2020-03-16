@@ -1,6 +1,15 @@
 import re
 import unicodedata
 
+def input_to_stdin( inputs ) :
+
+    stdin = ''
+
+    for input in inputs :
+        stdin += str(input) + ' '
+
+    return stdin
+
 def edp_function( function_name, *args, **kwargs ) :
 
     edp_str = function_name + '('
@@ -62,3 +71,5 @@ if __name__ == '__main__' :
     print( FreeFemize( 'toto_ça$$$_vélo$_35' ) )
     print( headerFrame(FreeFemize( 'toto_ça$$$____vélo$_35' , type = 'header' )) )
     print( flagize( 'début' ) )
+
+    print( input_to_stdin([4.3, 6, 7]) )

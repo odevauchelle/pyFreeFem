@@ -34,7 +34,7 @@ import warnings
 from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
-from .FreeFemTools.edpTools import flagize
+from .FreeFemTools.edpTools import flagize, input_to_stdin
 
 default_sparse_matrix = csr_matrix
 
@@ -203,25 +203,28 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
 
     return np.array(data)
 
-def run_FreeFem( edp_str, verbose = False ) :
+def run_FreeFem( edp_str, verbose = False, stdin = None ) :
     '''
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
+
+    if stdin is None :
+        stdin = []
 
     edp_str = edp_str.replace( '"',  "\"'\"" )
 
     command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
 
-    with subprocess.Popen( [command], stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
+    with subprocess.Popen( [command], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
 
         if verbose :
             print('\nRunning FreeFem++...')
 
-        output, error = proc.communicate() # Freefem outputs errors in console
+        output, error = proc.communicate( input = input_to_stdin( stdin ).encode() ) # Freefem outputs errors in console
 
         if not proc.returncode :
             if verbose :
-                print('\nFreeFem++ run successfull.\n')
+                print('\nFreeFem++ ran successfully.\n')
             return output.decode('utf-8')
 
         else :

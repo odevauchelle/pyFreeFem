@@ -175,8 +175,24 @@ class edpInput :
             variable_names = self.variable_names
             variable_names.update( { '_vector_file_name_' : self.tempfile.name, '_vector_name_' : self.FreeFem_name } )
 
-            for key in variable_names.keys() :
-                edp_str = edp_str.replace( key, variable_names[key] )
+            for names in variable_names.items() :
+                edp_str = edp_str.replace( *names )
+
+        elif self.type is in 'real', 'int' :
+
+            if self.declare :
+                if self.type is 'real':
+                    edp_str += 'real _number_name_;'
+                if self.type is 'int' :
+                    edp_str += 'int _number_name_;'
+
+            edp_str += 'cin >> _number_name;'
+
+            variable_names = self.variable_names
+            variable_names.update( { '_number_name_' : self.FreeFem_name } )
+
+            for names in variable_names.items() :
+                edp_str = edp_str.replace( *names )
 
         return edp_str
 
