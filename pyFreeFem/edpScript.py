@@ -178,15 +178,15 @@ class edpInput :
             for names in variable_names.items() :
                 edp_str = edp_str.replace( *names )
 
-        elif self.type is in 'real', 'int' :
+        elif self.type in [ 'real', 'int' ] :
 
             if self.declare :
                 if self.type is 'real':
-                    edp_str += 'real _number_name_;'
+                    edp_str += 'real _number_name_;\n'
                 if self.type is 'int' :
-                    edp_str += 'int _number_name_;'
+                    edp_str += 'int _number_name_;\n'
 
-            edp_str += 'cin >> _number_name;'
+            edp_str += 'cin >> _number_name_;\n'
 
             variable_names = self.variable_names
             variable_names.update( { '_number_name_' : self.FreeFem_name } )
@@ -195,6 +195,26 @@ class edpInput :
                 edp_str = edp_str.replace( *names )
 
         return edp_str
+
+    def get_stdin( self, **kwargs ) :
+
+        stdin = []
+
+        if self.type in [ 'real', 'int' ] :
+
+            if self.source is None :
+                source = kwargs[ self.name ] # the source is input when calling get_stdin
+
+            else :
+                source = self.source
+
+            if self.type is 'int' :
+                source = int(source)
+
+
+            stdin += [source]
+
+        return stdin
 
 class edpBlock :
 
@@ -242,6 +262,15 @@ class edpBlock :
             self.header = FreeFemize( name, type = 'header' )
         else :
             self.header = header
+
+    def get_stdin( self, **kwargs_input ) :
+
+        stdin = []
+
+        for input in self.input :
+            stdin += input.get_stdin(  **kwargs_input )
+
+        return stdin
 
     def get_edp( self, **kwargs_input ) :
 
@@ -328,6 +357,15 @@ class edpScript :
 
         return edp
 
+    def get_stdin( self, **kwargs_input ) :
+
+        stdin = []
+
+        for block in self.blocks :
+            stdin += block.get_stdin( **kwargs_input )
+
+        return stdin
+
     def clean_temp_files(self, verbose = False) :
 
         for block in self.blocks :
@@ -342,7 +380,7 @@ class edpScript :
                     input.tempfile.close()
 
     def run( self, **kwargs_input ) :
-        freefem_output = run_FreeFem( self.get_edp( **kwargs_input ) )
+        freefem_output = run_FreeFem( self.get_edp( **kwargs_input ), stdin =  self.get_stdin( **kwargs_input ) )
         self.clean_temp_files()
         return freefem_output
 
