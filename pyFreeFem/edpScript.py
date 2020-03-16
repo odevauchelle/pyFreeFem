@@ -56,6 +56,9 @@ class edpOutput :
         elif self.type == 'mesh' :
             edp = export_mesh_edp( _Th_ = self.FreeFem_name )
 
+        elif self.type in ['int', 'real'] :
+            edp = 'cout << _number_name_ << endl;\n'.replace( '_number_name_', self.FreeFem_name )
+
         return add_flags( edp, self.flag )
 
     def parse( self, FreeFem_output ) :
@@ -68,6 +71,12 @@ class edpOutput :
 
         elif self.type == 'mesh' :
             return FreeFem_str_to_mesh( parse_FreeFem_output( FreeFem_output, self.flag ) )
+
+        elif self.type is 'real':
+            return  float( parse_FreeFem_output( FreeFem_output, self.flag ) )
+
+        elif self.type is 'int':
+            return  int( parse_FreeFem_output( FreeFem_output, self.flag ) )
 
 class edpInput :
     '''
@@ -143,7 +152,7 @@ class edpInput :
             if self.declare :
                 edp_str += 'mesh _Th_;\n'
 
-            edp_str += '_Th_ = readmesh( "mesh_file_name" ) ;\n'
+            edp_str += '_Th_ = readmesh( "_mesh_file_name_" ) ;\n'
 
             variable_names = self.variable_names
             variable_names.update( { '_mesh_file_name_' : self.tempfile.name, '_Th_' : self.FreeFem_name } )
@@ -159,7 +168,7 @@ class edpInput :
             savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
 
             if self.declare :
-                edp_str += '_Vh_ _vector_name_;\n'
+                edp_str += '_VhU_ _vector_name_;\n'
 
             edp_str += '''
                 {
