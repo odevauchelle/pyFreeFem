@@ -9,6 +9,37 @@ from .FreeFemTools.edpTools import edp_function, FreeFemize, headerFrame, flagiz
 from .FreeFemTools.FreeFemStatics import default_variable_names
 from .edpScript import *
 
+def InputScript( fespace = None, declare = True, **inputs ) :
+    '''
+    script = InputScript( fespace = None, declare = True, **inputs )
+    '''
+    script = edpScript('')
+
+    if fespace is None :
+        variable_names = {}
+    else :
+        variable_names = { '_VhU_' : fespace }
+
+    for input_name, source in inputs.items() :
+
+        if isinstance( source, str ) :
+            script += edpInput( name = input_name, data_type = source, variable_names = variable_names, declare = declare )
+        else :
+            script += edpInput( name = input_name, source = source, variable_names = variable_names, declare = declare )
+
+    return script
+
+
+def OutputScript( **outputs ) :
+    '''
+    script = OutputScript( **outputs )
+    '''
+    script = edpScript('')
+
+    for output_name, output_type in outputs.items() :
+        script += edpOutput( name = output_name, data_type = output_type )
+
+    return script
 
 def VarfBlock( varf, name, functions = None, fespaces = None, FreeFem_name = None, output = True ) :
     '''
