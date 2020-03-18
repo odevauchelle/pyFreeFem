@@ -14,7 +14,7 @@ fespace Vh( Th, P1 );
 Vh u,v;
 ''')
 
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 script += pyff.VarfScript(
     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',

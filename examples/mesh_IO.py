@@ -8,14 +8,12 @@ sys.path.append('./../')
 import pyFreeFem as pyff
 
 # Create mesh with FreeFem++
-
 script = pyff.edpScript( '''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(150) );
 ''' )
 
-
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 
@@ -28,7 +26,7 @@ Th.rename_boundary( {1:'initial', 2:'new'} )
 
 # Export mesh back to FreeFem
 
-script = pyff.edpScript( pyff.edpInput( name = 'Th', source = Th ) )
+script = pyff.InputScript( Th = Th )
 
 # calculate FEM matrices
 
@@ -43,8 +41,7 @@ matrices = {
     'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
 }
 
-for matrix_name in matrices.keys() :
-    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
+script += pyff.VarfScript( **matrices )
 
 matrices = script.get_output()
 

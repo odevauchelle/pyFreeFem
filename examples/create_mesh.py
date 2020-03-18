@@ -9,7 +9,7 @@ border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
 ''')
 
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 

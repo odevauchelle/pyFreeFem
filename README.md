@@ -31,7 +31,7 @@ border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(10) );
 ''')
 
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 
@@ -89,7 +89,7 @@ fespace Vh( Th, P1 );
 Vh u,v;
 ''')
 
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 script += pyff.VarfScript(
     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
@@ -129,22 +129,17 @@ Here is the result:
 
 ## Mess with the mesh
 
-We now create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++.
+We now create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./documentation/IO.md) to and from FreeFem++ are what pyFreeFem was written for.
 ```python
 import pyFreeFem as pyff
 
 # Create mesh with FreeFem++
-
 script = pyff.edpScript( '''
-border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-mesh Th = buildmesh( Circle(150) );
-''' )
-
-
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
-
+    border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
+    mesh Th = buildmesh( Circle(150) );
+    ''' )
+script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
-
 
 # Change mesh
 for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
@@ -160,25 +155,21 @@ We want to solve the Poisson equation on this new mesh. Let us first calculate t
 
 ```python
 # Export mesh back to FreeFem
-
-script = pyff.edpScript( pyff.edpInput( name = 'Th', source = Th ) )
+script = pyff.InputScript( Th = Th )
 
 # calculate FEM matrices
-
-script +='''
-fespace Vh( Th, P1 ) ;
-Vh u, v ;
-'''
+script += '''
+    fespace Vh( Th, P1 ) ;
+    Vh u, v ;
+    '''
 
 matrices = {
     'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
     'Grammian' : 'int2d(Th)( u*v )',
     'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
-}
+    }
 
-for matrix_name in matrices.keys() :
-    script += pyff.VarfBlock( name = matrix_name, varf = matrices[matrix_name] )
-
+script += pyff.VarfScript( **matrices )
 matrices = script.get_output()
 ```
 We may now solve our finite-element problem as [above](#solve-a-simple-problem). Here is the result:
@@ -190,4 +181,3 @@ A more useful mesh change, perhaps, is to [refine it](./documentation/adaptmesh.
 ## To do
 
 - Import mesh, vectors and matrices to FreeFem++ without writing in temporary file
-- Import and export real numbers and integers
