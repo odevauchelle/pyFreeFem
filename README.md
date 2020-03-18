@@ -1,6 +1,6 @@
 # pyFreeFem
 
-pyFreeFem is a simple Python wrapper for the finite-element software [FreeFem++](https://freefem.org/). It helps importing and exporting meshes and finite-element matrices to and from FreeFem++. This library can only handle two-dimensional finite-element spaces.
+pyFreeFem is a simple Python wrapper for the finite-element software [FreeFem++](https://freefem.org/). It helps [importing and exporting](./documentation/IO.md) meshes, finite-element matrices and vectors to and from FreeFem++. This library can only handle two-dimensional finite-element spaces.
 
 Here is an example of its use:
 

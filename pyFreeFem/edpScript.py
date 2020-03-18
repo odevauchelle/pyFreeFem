@@ -100,9 +100,10 @@ class edpInput :
         self.declare = declare
 
         if variable_names is None :
-            self.variable_names = default_variable_names
-        else :
-            self.variable_names = variable_names
+            variable_names = {}
+
+        self.variable_names = default_variable_names.copy()
+        self.variable_names.update(variable_names)
 
         if FreeFem_name is None :
             self.FreeFem_name = FreeFemize( name, type = 'variable' )

@@ -8,19 +8,18 @@ import pyFreeFem as pyff
 # create initial mesh
 
 script = pyff.edpScript('mesh Th = square(5, 5);')
-script += pyff.edpOutput( data_type = 'mesh', name = 'Th' )
+script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
 
 Th_initial = Th
 
 # create refinement script
 
-script = pyff.edpScript()
-script += pyff.edpInput( name = 'Th', data_type = 'mesh' )
+script = pyff.InputScript( Th = 'mesh' )
 script += 'fespace Vh( Th, P1 );'
-script += pyff.edpInput( name = 'u', data_type = 'vector' )
+script +=  pyff.InputScript( u = 'vector' )
 script += 'Th = adaptmesh( Th, u, iso = 1 );'
-script += pyff.edpOutput( name = 'Th', data_type = 'mesh' )
+script += pyff.OutputScript( Th = 'mesh' )
 
 # refine Th
 
