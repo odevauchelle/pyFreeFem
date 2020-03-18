@@ -17,7 +17,7 @@ This mesh looks like this:
 
 ## Refinement
 
-We now want to refine the above mesh to accurately represent a two-dimenionnal Gaussian centered at (0.5,0.5). To to so, we use the FreeFem++ function [adaptmesh](https://doc.freefem.org/documentation/mesh-generation.html#the-command-adaptmesh). We also need to [import and export](./documentation/IO.md) data to and from FreeFem++.
+We now want to refine the above mesh to accurately represent a two-dimenionnal Gaussian centered at (0.5,0.5). To to so, we use the FreeFem++ function [adaptmesh](https://doc.freefem.org/documentation/mesh-generation.html#the-command-adaptmesh). We also need to [import and export](IO.md) data to and from FreeFem++.
 
 ```python
 # create refinement script
