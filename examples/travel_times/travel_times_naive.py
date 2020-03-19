@@ -54,6 +54,8 @@ ax_time.plot( x_start, t, color = trav_time_color )
 ax_time.set_xlabel( 'Starting position' )
 ax_time.set_ylabel( 'Travel time' )
 
-
+fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg'
+savefig( fig_path_and_name , bbox_inches = 'tight' )
+print(fig_path_and_name)
 
 show()
