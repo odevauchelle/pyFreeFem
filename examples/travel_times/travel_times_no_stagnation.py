@@ -60,6 +60,7 @@ def skirt_time( z, Phi ) :
 
 x_start = []
 t = []
+split = []
 
 z_sp = -1j*H # stagnation point
 
@@ -67,6 +68,8 @@ for contour in contours.collections:
 
     travel_time_path = 0
     x_start_path = []
+    split_contour = False
+
 
     for path in contour.get_paths() :
         x, y = path.vertices.T
@@ -78,17 +81,31 @@ for contour in contours.collections:
         x_start_path += [ x[0] ]
 
         if ( abs( z[-1] - z_sp ) - epsilon ) < epsilon :
+            split_contour = True
             travel_time_path += skirt_time( z[-1] - z_sp, Phi( z[-1] ) - Phi( z_sp ) )
 
+    split += [split_contour]
     x_start += [ x_start_path[0] ]
     t += [ travel_time_path ]
+
+
+split = array(split)
+not_split = ~split
+not_split[where(split)[0][-1]] = True
+x_start = array(x_start)
+t = array(t)
 
 figure()
 ax = gca()
 trav_time_color = 'tab:red'
-ax.plot( x_start, t, color = trav_time_color )
+ax.plot( x_start[not_split], t[not_split], color = trav_time_color, label = 'continuous' )
+ax.plot( x_start[split], t[split], color = trav_time_color, ls = '--', label = 'split' )
+ax.legend(title = 'Contour')
 ax.set_xlabel( 'Starting position' )
 ax.set_ylabel( 'Travel time' )
 
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_trav_time' + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 show()

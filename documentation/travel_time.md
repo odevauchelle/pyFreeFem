@@ -75,4 +75,46 @@ Here is the mesh:
 
 ![No stagnation point](./../figures/travel_times_no_stagnation_mesh.svg)
 
-Some contours now cut through the boundary that skirts the stagnation point. To compute their travel time, we need to stitch their segments together with
+Some contours now cut through the boundary that skirts the stagnation point. To compute their travel time, we need to stitch their segments together, and add the travel time through the singularity's neighborhood.
+
+We first define the function that gives the travel time near the stagnation point :
+```python
+def skirt_time( z, Phi ) :
+    A = real( Phi/z**2 )
+    psi = imag(Phi)
+    phi_in = real(Phi)
+    phi_out = real( -conj( Phi ) ) # symmetry
+    return ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A )
+```
+We may now call this function when computing the travel time of split contours:
+```python
+z_sp = -1j*H # stagnation point
+
+x_start = []
+t = []
+
+for contour in contours.collections:
+
+    travel_time_path = 0
+    x_start_path = []
+
+    for path in contour.get_paths() :
+        x, y = path.vertices.T
+        z = x + 1j*y
+        phi = real( Phi(z) )
+        ds = sqrt( diff(x)**2 + diff(y)**2 )
+        dt = ds**2/diff(phi)
+        travel_time_path += sum(dt)
+        x_start_path += [ x[0] ]
+
+        if ( abs( z[-1] - z_sp ) - epsilon ) < epsilon :
+            travel_time_path += skirt_time( z[-1] - z_sp, Phi( z[-1] ) - Phi( z_sp ) )
+
+    x_start += [ x_start_path[0] ]
+    t += [ travel_time_path ]
+```
+Here is the result:
+
+![Travel time split contours](./../figures/travel_times_no_stagnation_trav_time.svg)
+
+## Many modes

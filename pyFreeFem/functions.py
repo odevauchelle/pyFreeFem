@@ -109,24 +109,21 @@ def adaptmesh( Th, u = None, **kwargs ):
 
     '''
 
-    script = edpScript( 'cout << "toto !" << endl;')
-    script += edpInput( name = 'Th', data_type = 'mesh' )
+    script = InputScript( Th = 'mesh' )
 
     if u is None or u is '1' or u is 1 or u is 1. :
         script += 'Th = ' + edp_function( 'adaptmesh', 'Th', **kwargs )  + ';'
-
         script_args = dict( Th = Th )
 
-
     else :
-        script += 'fespace _Vh_( _Th_, P1 );'
-        script += edpInput( name = 'u', data_type = 'vector' )
+        script += 'fespace Vh( Th, P1 );'
+        script += InputScript( u = 'vector' )
         script += 'Th = ' + edp_function( 'adaptmesh', 'Th', 'u', **kwargs )  + ';'
 
         script_args = dict( Th = Th, u = u )
 
 
-    script += edpOutput( name = 'Th', data_type = 'mesh' )
+    script += OutputScript( Th = 'mesh' )
 
     _, int_to_label = Th.get_boundary_label_conversion() # Freefem++ can only handle integer boundary labels
 
