@@ -4,42 +4,20 @@ sys.path.append('./../../')
 from pylab import *
 import pyFreeFem as pyff
 from matplotlib.tri import LinearTriInterpolator
-from numpy.ma import is_masked
 
 ################# PARAMETERS
 L = 1.
 H = .3
 epsilon = .05
 npts = 25
-n_modes = 500
+n_modes = 50
 k = pi/L
-levels = logspace( -3, 0, 25 )
+levels = logspace( -3, 0, 15 )
 
 def Phi_n( z, n = 1 ) :
-
-    try :
-        z[0]
-        reduce = False
-    except :
-        z = array([z])
-        reduce = True
-
     Phi = z*0
-    selection = imag(z) > -10./( n*k ) # deeper than this, the exponential virtually vanishes
+    selection = imag(z) > -5./( n*k ) # deeper than this, the exponential virtually vanishes
     Phi[selection] = -cosh( n*k*( 1j*z[selection] - H ) )
-
-    if reduce :
-        return Phi[0]
-    else :
-        return Phi
-
-def Phi_sum( z ) :
-
-    Phi = 0.*z
-
-    for n in range( 1, n_modes ) :
-        Phi += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
-
     return Phi
 
 ################ MESH
@@ -60,35 +38,27 @@ script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
 z_sp_left = -1j*H # stagnation point
 z_sp_right = L - 1j*H # stagnation point
-z_out = 0
+z_out = L
 
-for _ in range(4):
+for _ in range(3):
     z = Th.x + 1j*Th.y
     print(len(z))
-    Phi_mesh = log( z - z_sp_left )+ log( z_sp_right - z ) + log( z_out - z )
-    Th = pyff.adaptmesh( Th, imag( Phi_mesh ), iso = 1, hmax = epsilon/2, err = 5e-3 )
+    Phi_mesh = Phi_n( z, n_modes ) + log( z - z_sp_left )+ log( z_sp_right - z ) + log( z_out - z )
+    Th = pyff.adaptmesh( Th, imag( Phi_mesh ), iso = 1, hmax = epsilon/2, hmin = .5*L/n_modes )
 
 z = Th.x + 1j*Th.y
-Phi_value = Phi_sum( z )
+Phi_value = 0.*z
+
+for n in range( 1, n_modes ) :
+    Phi_value += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
 
 phi_int = LinearTriInterpolator( Th, real( Phi_value ) )
 psi_int = LinearTriInterpolator( Th, imag( Phi_value ) )
 
-def Phi_int( z ) :
+def Phi( z ) :
     x = real(z)
     y = imag(z)
     return phi_int( x, y ) + 1j*psi_int( x, y )
-
-def Phi( z ) :
-
-    result = Phi_int( z )
-
-    if is_masked(result) :
-        return Phi_sum( z )
-
-    else :
-        return result
-
 
 Phi = vectorize(Phi)
 
@@ -110,14 +80,14 @@ ax.axis('equal'); ax.axis('off')
 # savefig( fig_path_and_name , bbox_inches = 'tight' )
 # print(fig_path_and_name)
 
-############### TRAVEL TIMES
+################ TRAVEL TIMES
 
 def skirt_time( z, Phi ) :
     A = real( Phi/z**2 )
     psi = imag( Phi )
     phi_in = real( Phi )
     phi_out = real( -conj( Phi ) ) # symmetry
-    return abs( ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A ) )
+    return ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A )
 
 x_start = []
 t = []
@@ -125,40 +95,29 @@ split = []
 
 z_sp = -1j*H # stagnation point
 
-
-
 for contour in contours.collections:
 
-    travel_time_path = 0.
+    travel_time_path = 0
     x_start_path = []
     split_contour = False
 
     for path in contour.get_paths() :
-
         x, y = path.vertices.T
         z = x + 1j*y
         phi = real( Phi( z ) )
         ds = sqrt( diff(x)**2 + diff(y)**2 )
         dt = ds**2/diff(phi)
         travel_time_path += sum(dt)
+        x_start_path += [ x[0] ]
 
-        for z_sp in ( z_sp_left, z_sp_right ) :
-
-            z_in = z[0]
-
-            if ( abs( z_in - z_sp ) - epsilon ) < epsilon**2 :
-                ax.plot(real(z_in),imag(z_in),'.m')
+        for z_sp in (z_sp_left, z_sp_right) :
+            if ( abs( z[-1] - z_sp ) - epsilon ) < epsilon :
                 split_contour = True
-                travel_time_path += skirt_time( z_in - z_sp, Phi( z_in ) -  Phi( z_sp ) )
+                travel_time_path += skirt_time( z[-1] - z_sp, Phi( z[-1] ) - Phi( z_sp ) )
 
-    try :
-        x, y = contour.get_paths()[-1].vertices[-1]
-        ax.plot(x,y,'.r')
-        x_start += [ x ]
-        t += [ travel_time_path ]
-        split += [ split_contour ]
-    except :
-        ax.plot(x,y,'.g')
+    split += [split_contour]
+    x_start += [ x_start_path[0] ]
+    t += [ travel_time_path ]
 
 
 split = array(split)
@@ -166,9 +125,6 @@ not_split = ~split
 not_split[where(split)[0][-1]] = True
 x_start = array(x_start)
 t = array(t)
-print(x_start)
-print(t)
-
 
 figure()
 ax = gca()
