@@ -9,7 +9,7 @@ L = 1.
 H = .3
 epsilon = .05
 npts = 25
-n_modes = 30
+n_modes = 50
 k = pi/L
 levels = logspace( -3, 0, 15 )
 
@@ -20,24 +20,34 @@ def Phi_n( z, n = 1 ) :
 
 script = pyff.InputScript( L = L, H = H, epsilon = epsilon, npts = npts )
 script +='''
-border top( t = L-epsilon, 0 ){ x = t; y = 0; }
-border left( t = 0, -(H -epsilon) ){ x = 0; y = t; }
+border top( t = L, epsilon ){ x = t; y = 0; }
+border outlet( t = 0, -pi/2 ){ x = epsilon*cos(t); y = epsilon*sin(t); }
+border left( t = -epsilon, -( H -epsilon) ){ x = 0; y = t; }
 border skirt( t = pi/2, 0 ){ x = epsilon*cos(t); y = -H + epsilon*sin(t); }
-border bottom( t = epsilon, L ){x = t; y = -H; }
-border right( t = -H, -epsilon ){ x = L; y = t; }
-border outlet( t = -pi/2, -pi ){ x = L + epsilon*cos(t); y = epsilon*sin(t); }
-mesh Th = buildmesh( top(npts) + left(npts) + skirt(npts) + bottom(npts) + right(npts) + outlet(npts) );
+border bottom( t = epsilon, L - epsilon ){x = t; y = -H; }
+border skirtRight( t = pi, pi/2 ){ x = L + epsilon*cos(t); y = -H + epsilon*sin(t); }
+border right( t = -H+epsilon, 0 ){ x = L; y = t; }
+mesh Th = buildmesh( top(npts) + outlet(npts) + left(npts) + skirt(npts) + bottom(npts) + skirtRight(npts) + right(npts) );
 '''
 script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 z_sp = -1j*H # stagnation point
+z_sp_right = L - 1j*H # stagnation point
 z_out = L
 
 for _ in range(3):
     z = Th.x + 1j*Th.y
-    Phi_mesh = exp( n_modes*k*Th.y ) + log( z - z_sp ) + log( z_out - z )
-    Th = pyff.adaptmesh( Th, Phi_mesh, iso = 1 )
+    print(len(z))
+    Phi_mesh = Phi_n( z, n_modes ) + log( z - z_sp )+ log( z_sp_right - z ) + log( z_out - z )
+    Th = pyff.adaptmesh( Th, imag( Phi_mesh ), iso = 1, hmax = epsilon/2, hmin = .5*L/n_modes )
+
+z = Th.x + 1j*Th.y
+Phi_value = 0.*z
+
+for n in range( 1, n_modes ) :
+    Phi_value += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
+
 
 ################ PLOT MESH
 
@@ -49,8 +59,7 @@ figure()
 ax = gca()
 Th.plot_triangles(ax = ax, lw = .7, color = 'k', alpha = .2)
 Th.plot_boundaries( color = 'k', clip_on = False )
-# ax.tricontourf( Th, real( Phi_mesh ) )
-# contours = ax.tricontour( Th, imag( Phi_n( z, n_modes ) ), colors = ['tab:blue'], levels = levels )
+contours = ax.tricontour( Th, imag( Phi_value ), colors = ['tab:blue'], levels = levels )
 xticks([]); yticks([])
 ax.axis('equal'); ax.axis('off')
 
