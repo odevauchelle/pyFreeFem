@@ -43,6 +43,8 @@ pp.show()
 ```
 ![Circular mesh](./figures/create_mesh.svg)
 
+Creating a mesh with FreeFem++ can be useful by itself, for instance to calculate [travel times](./documentation/travel_time.md) along known streamlines. Often, though, we want to use that mesh for finite elements computations.
+
 ## Finite element matrices
 
 To get finite element matrices, we first need to create a mesh, and define a finite element space. The VarfBlock function then creates, and exports, the matrix corresponding to a variational formulation:

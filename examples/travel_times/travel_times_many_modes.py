@@ -82,7 +82,7 @@ def Phi( z ) :
 # gs = fig.add_gridspec( 3, 1 )
 # ax_time = fig.add_subplot( gs[2:, :] )
 # ax_psi = fig.add_subplot( gs[:2, :], sharex = ax_time)
-figure(figsize = (6,3.))
+figure(figsize = (7,3.))
 ax = gca()
 Th.plot_triangles(ax = ax, lw = .7, color = 'k', alpha = .2)
 Th.plot_boundaries( color = 'k', clip_on = False )
@@ -90,9 +90,10 @@ contours = ax.tricontour( Th, imag( Phi_value ), colors = ['tab:blue'], levels =
 xticks([]); yticks([])
 ax.axis('equal'); ax.axis('off')
 #
-# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh' + '.svg'
-# savefig( fig_path_and_name , bbox_inches = 'tight' )
-# print(fig_path_and_name)
+ax.set_title( str( n_modes ) + ' modes' )
+fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh' + '.svg'
+savefig( fig_path_and_name , bbox_inches = 'tight' )
+print(fig_path_and_name)
 
 ############### TRAVEL TIMES
 

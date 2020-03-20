@@ -1,6 +1,6 @@
 # Travel time along a streamline
 
-Here we calculate numerically the travel time along analytic streamlines past a corner. The streamlines correspond to the complex hyperbolic cosine.
+Here we calculate numerically the travel time along analytic streamlines past a corner. The streamlines first correspond to the complex hyperbolic cosine, and a more complicated example follows.
 
 ## Naive method
 
@@ -81,10 +81,10 @@ We first define the function that gives the travel time near the stagnation poin
 ```python
 def skirt_time( z, Phi ) :
     A = real( Phi/z**2 )
-    psi = imag(Phi)
-    phi_in = real(Phi)
+    psi = imag( Phi )
+    phi_in = real( Phi )
     phi_out = real( -conj( Phi ) ) # symmetry
-    return ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A )
+    return abs( ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A ) )
 ```
 We may now call this function when computing the travel time of split contours:
 ```python
@@ -151,9 +151,82 @@ def Phi_n( z, n = 1 ) :
 To avoid prohibitively large computations, we will use an interpolator for the stream function. To do so, we first need to build the mesh.
 
 ### Mesh
+
+We want a rectangular mesh with singular points removed. There are three such points: two stagnation points on the bottom, and one at the outlet. We use pyFreeFem to build the mesh, and then homogeneize the triangles with `adaptmesh`:
+```python
+script = pyff.InputScript( L = L, H = H, epsilon = epsilon, npts = npts )
+script +='''
+border top( t = L, epsilon ){ x = t; y = 0; }
+border outlet( t = 0, -pi/2 ){ x = epsilon*cos(t); y = epsilon*sin(t); }
+border left( t = -epsilon, -( H -epsilon) ){ x = 0; y = t; }
+border skirt( t = pi/2, 0 ){ x = epsilon*cos(t); y = -H + epsilon*sin(t); }
+border bottom( t = epsilon, L - epsilon ){x = t; y = -H; }
+border skirtRight( t = pi, pi/2 ){ x = L + epsilon*cos(t); y = -H + epsilon*sin(t); }
+border right( t = -H+epsilon, 0 ){ x = L; y = t; }
+mesh Th = buildmesh( top(npts) + outlet(npts) + left(npts) + skirt(npts) + bottom(npts) + skirtRight(npts) + right(npts) );
+'''
+script += pyff.OutputScript( Th = 'mesh' )
+Th = script.get_output()['Th']
+
+for _ in range(3):
+    Th = pyff.adaptmesh( Th, iso = 1, hmax = epsilon/2, err = 5e-3 )
+```
+The resulting mesh looks like this:
+
 ![Mesh many modes](./../figures/travel_times_many_modes_mesh.svg)
+
+We can now evaluate the stream function and plot the corresponding streamlines:
+```python
+Phi_value = Phi_sum( Th.x + 1j*Th.y )
+```
+This also provides us with the values we need to create an interpolator for the stream function.
 
 ### Interpolation
 
+To avoid the repeated computation of large sums, we approximate the stream fucntion with an interpolator:
+```python
+phi_int, psi_int = LinearTriInterpolator( Th, real( Phi_value ) ), LinearTriInterpolator( Th, imag( Phi_value ) )
+
+def Phi( z ) :
+    x, y = real(z), imag(z)
+    Phi_int = phi_int( x, y ) + 1j*psi_int( x, y )
+    if is_masked(Phi_int) : # the interpolator fails
+        return Phi_sum( z )
+    else :
+        return Phi_int
+```
+This function handles points that lie outside the mesh by direct call to the sum function.
+
 ### Travel time
+We may now compute travel times as before:
+```python
+x_start = []
+t = []
+
+for contour in contours.collections[:-1]:
+
+    travel_time_path = 0.
+    x_start_path = []
+
+    for path in contour.get_paths() :
+
+        x, y = path.vertices.T
+        z = x + 1j*y
+        phi = real( Phi( z ) )
+        ds = sqrt( diff(x)**2 + diff(y)**2 )
+        dt = ds**2/diff(phi)
+        travel_time_path += sum(dt)
+
+        for z_sp in ( z_sp_left, z_sp_right ) :
+            z_in = z[0]
+            if ( abs( z_in - z_sp ) - epsilon ) < epsilon**2 :
+                travel_time_path += skirt_time( z_in - z_sp, Phi( z_in ) -  Phi( z_sp ) )
+
+    x_start += [ contour.get_paths()[-1].vertices[-1][0] ]
+    t += [ travel_time_path ]
+```
+The following curve gets computed in a few seconds.
+
 ![Travel time many modes](./../figures/travel_times_many_modes_trav_time.svg)
+
+Of course, the longest trajectories are the ones that are more demanding in terms of mesh refinement. A better mesh would be refined along the boundaries.
