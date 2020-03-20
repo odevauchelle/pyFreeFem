@@ -86,7 +86,7 @@ def skirt_time( z, Phi ) :
     phi_out = real( -conj( Phi ) ) # symmetry
     return abs( ( arcsinh( phi_out/psi ) - arcsinh( phi_in/psi ) )/( 4*A ) )
 ```
-We may now call this function when computing the travel time of split contours:
+We may now call this function when computing travel times along split contours:
 ```python
 z_sp = -1j*H # stagnation point
 
@@ -131,8 +131,8 @@ def Phi_sum( z ) :
 ```
 That there are so many modes creates two problems:
 
-- High-frequency modes are exponentially close to zero deep under the top surface.
-- Computation time gets large (`n_modes*len(z)`)
+- High-frequency modes are exponentially close to zero deep under the top surface;
+- Computation time gets large (`n_modes*len(z)`).
 
 To bypass the first problem, we make each mode explicitly vanish beyond its caracteristic depth:
 ```python
