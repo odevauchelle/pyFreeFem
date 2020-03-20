@@ -10,28 +10,26 @@ from numpy.ma import is_masked
 L = 1.
 H = .3
 epsilon = .05
-npts = 25
+npts = 20
 n_modes = 500
 k = pi/L
-levels = logspace( -3, 0, 25 )
+levels = logspace( -3, 0, 20 )
 
 def Phi_n( z, n = 1 ) :
 
-    try :
-        z[0]
-        reduce = False
-    except :
-        z = array([z])
-        reduce = True
+    shallow_z = imag(z) > -8./( n*k ) # deeper than this, the exponential virtually vanishes
 
-    Phi = z*0
-    selection = imag(z) > -10./( n*k ) # deeper than this, the exponential virtually vanishes
-    Phi[selection] = -cosh( n*k*( 1j*z[selection] - H ) )
-
-    if reduce :
-        return Phi[0]
-    else :
+    try : # z is an array
+        Phi = z*0
+        Phi[shallow_z] = -cosh( n*k*( 1j*z[shallow_z] - H ) )
         return Phi
+
+    except : # z is a single complex number
+        if shallow_z :
+            return -cosh( n*k*( 1j*z - H ) )
+        else :
+            return 0
+
 
 def Phi_sum( z ) :
 
@@ -56,41 +54,27 @@ border right( t = -H+epsilon, 0 ){ x = L; y = t; }
 mesh Th = buildmesh( top(npts) + outlet(npts) + left(npts) + skirt(npts) + bottom(npts) + skirtRight(npts) + right(npts) );
 '''
 script += pyff.OutputScript( Th = 'mesh' )
-
 Th = script.get_output()['Th']
-z_sp_left = -1j*H # stagnation point
-z_sp_right = L - 1j*H # stagnation point
-z_out = 0
 
-for _ in range(4):
-    z = Th.x + 1j*Th.y
-    print(len(z))
-    Phi_mesh = log( z - z_sp_left )+ log( z_sp_right - z ) + log( z_out - z )
-    Th = pyff.adaptmesh( Th, imag( Phi_mesh ), iso = 1, hmax = epsilon/2, err = 5e-3 )
+for _ in range(3):
+    Th = pyff.adaptmesh( Th, iso = 1, hmax = epsilon/2, err = 5e-3 )
 
-z = Th.x + 1j*Th.y
-Phi_value = Phi_sum( z )
+################ Phi Interpolator
 
-phi_int = LinearTriInterpolator( Th, real( Phi_value ) )
-psi_int = LinearTriInterpolator( Th, imag( Phi_value ) )
+Phi_value = Phi_sum( Th.x + 1j*Th.y )
 
-def Phi_int( z ) :
-    x = real(z)
-    y = imag(z)
-    return phi_int( x, y ) + 1j*psi_int( x, y )
+phi_int, psi_int = LinearTriInterpolator( Th, real( Phi_value ) ), LinearTriInterpolator( Th, imag( Phi_value ) )
 
 def Phi( z ) :
 
-    result = Phi_int( z )
+    x, y = real(z), imag(z)
+    Phi_int = phi_int( x, y ) + 1j*psi_int( x, y )
 
-    if is_masked(result) :
+    if is_masked(Phi_int) : # the interpolator fails
         return Phi_sum( z )
 
     else :
-        return result
-
-
-Phi = vectorize(Phi)
+        return Phi_int
 
 ################ PLOT MESH
 
@@ -98,19 +82,23 @@ Phi = vectorize(Phi)
 # gs = fig.add_gridspec( 3, 1 )
 # ax_time = fig.add_subplot( gs[2:, :] )
 # ax_psi = fig.add_subplot( gs[:2, :], sharex = ax_time)
-figure()
+figure(figsize = (6,3.))
 ax = gca()
 Th.plot_triangles(ax = ax, lw = .7, color = 'k', alpha = .2)
 Th.plot_boundaries( color = 'k', clip_on = False )
 contours = ax.tricontour( Th, imag( Phi_value ), colors = ['tab:blue'], levels = levels )
 xticks([]); yticks([])
 ax.axis('equal'); ax.axis('off')
-
+#
 # fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh' + '.svg'
 # savefig( fig_path_and_name , bbox_inches = 'tight' )
 # print(fig_path_and_name)
 
 ############### TRAVEL TIMES
+
+z_sp_left = -1j*H # stagnation point
+z_sp_right = L - 1j*H # stagnation point
+z_out = 0
 
 def skirt_time( z, Phi ) :
     A = real( Phi/z**2 )
@@ -121,17 +109,13 @@ def skirt_time( z, Phi ) :
 
 x_start = []
 t = []
-split = []
+is_split = []
 
-z_sp = -1j*H # stagnation point
-
-
-
-for contour in contours.collections:
+for contour in contours.collections[:-1]:
 
     travel_time_path = 0.
     x_start_path = []
-    split_contour = False
+    is_split_contour = False
 
     for path in contour.get_paths() :
 
@@ -147,34 +131,25 @@ for contour in contours.collections:
             z_in = z[0]
 
             if ( abs( z_in - z_sp ) - epsilon ) < epsilon**2 :
-                ax.plot(real(z_in),imag(z_in),'.m')
-                split_contour = True
                 travel_time_path += skirt_time( z_in - z_sp, Phi( z_in ) -  Phi( z_sp ) )
+                is_split_contour = True
 
-    try :
-        x, y = contour.get_paths()[-1].vertices[-1]
-        ax.plot(x,y,'.r')
-        x_start += [ x ]
-        t += [ travel_time_path ]
-        split += [ split_contour ]
-    except :
-        ax.plot(x,y,'.g')
+    x_start += [ contour.get_paths()[-1].vertices[-1][0] ]
+    t += [ travel_time_path ]
+    is_split += [ is_split_contour ]
 
 
-split = array(split)
-not_split = ~split
-not_split[where(split)[0][-1]] = True
+is_split = array(is_split)
+not_is_split = ~is_split
+not_is_split[where(is_split)[0][-1]] = True
 x_start = array(x_start)
 t = array(t)
-print(x_start)
-print(t)
-
 
 figure()
 ax = gca()
 trav_time_color = 'tab:red'
-ax.plot( x_start[not_split], t[not_split], color = trav_time_color, label = 'continuous' )
-ax.plot( x_start[split], t[split], color = trav_time_color, ls = '--', label = 'split' )
+ax.plot( x_start[not_is_split], t[not_is_split], color = trav_time_color, label = 'continuous' )
+ax.plot( x_start[is_split], t[is_split], color = trav_time_color, ls = '--', label = 'is_split' )
 ax.legend(title = 'Contour')
 ax.set_xlabel( 'Starting position' )
 ax.set_ylabel( 'Travel time' )

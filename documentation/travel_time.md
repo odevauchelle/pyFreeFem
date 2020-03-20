@@ -118,3 +118,42 @@ Here is the result:
 ![Travel time split contours](./../figures/travel_times_no_stagnation_trav_time.svg)
 
 ## Many modes
+
+### Large sum
+
+To compute travel times through a closed box, we need to define the stream function as a sum of many (say 500) modes:
+```python
+def Phi_sum( z ) :
+    Phi = 0.*z
+    for n in range( 1, n_modes ) :
+        Phi += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
+    return Phi
+```
+That there are so many modes creates two problems:
+
+- High-frequency modes are exponentially close to zero deep under the top surface.
+- Computation time gets large (`n_modes*len(z)`)
+
+To bypass the first problem, we make each mode explicitly vanish beyond its caracteristic depth:
+```python
+def Phi_n( z, n = 1 ) :
+    shallow_z = imag(z) > -8./( n*k ) # deeper than this, the exponential virtually vanishes
+    try : # z is an array
+        Phi = z*0
+        Phi[shallow_z] = -cosh( n*k*( 1j*z[shallow_z] - H ) )
+        return Phi
+    except : # z is a single complex number
+        if shallow_z :
+            return -cosh( n*k*( 1j*z - H ) )
+        else :
+            return 0
+```
+To avoid prohibitively large computations, we will use an interpolator for the stream function. To do so, we first need to build the mesh.
+
+### Mesh
+![Mesh many modes](./../figures/travel_times_many_modes_mesh.svg)
+
+### Interpolation
+
+### Travel time
+![Travel time many modes](./../figures/travel_times_many_modes_trav_time.svg)
