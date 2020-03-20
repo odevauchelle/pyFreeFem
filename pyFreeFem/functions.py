@@ -58,9 +58,6 @@ def VarfBlock( varf, name, functions = None, fespaces = None, FreeFem_name = Non
 
     variable_names.update( { '_matrix_name_' : FreeFem_name, '_variational_formulation_' : varf } )
 
-    print(variable_names)
-
-
     edp_str = '''
     varf V_matrix_name_( _u_, _v_ ) = _variational_formulation_ ;
     matrix M_matrix_name_ = V_matrix_name_( _VhU_, _VhV_ );
