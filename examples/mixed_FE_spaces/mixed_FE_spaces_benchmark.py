@@ -16,31 +16,18 @@ script = pyff.edpScript('mesh Th = square( 8, 8 );')
 script += pyff.OutputScript( Th = 'mesh' )
 
 script += '''
-fespace Vh1( Th, P1 );
-fespace Vh2( Th, P2 );
+fespace Vh( Th, P2 );
+Vh u = x^2 - y^3;
 '''
 
-script += pyff.VarfScript(
-    Gramian1 = 'int2d(Th)( v*u )',
-    fespaces = ( 'Vh1', 'Vh1' )
-    )
-
-script += pyff.VarfScript(
-    Gramian2 = 'int2d(Th)( v*u )',
-    fespaces = ( 'Vh2', 'Vh1' )
-    )
-
-script += 'Vh2 u2 = x^2 - y^3;'
-
-script += pyff.OutputScript( u2 = 'vector' )
+script += pyff.OutputScript( u = 'vector' )
 
 output = script.get_output()
 
 Th = output['Th']
-G = None, output['Gramian1'], output['Gramian2']
-u2 = output['u2']
+u2 = output['u']
 
-proj = spsolve( G[1], G[2] )
+proj = pyff.get_projector( Th, 'P2', 'P1' )
 
 print(shape(proj))
 print(len( Th.x ))
@@ -51,24 +38,12 @@ print(len( Th.x ))
 #
 #################################
 
-script = pyff.InputScript( Th = Th )
-script += '''
-fespace Vh1( Th, P1 );
-fespace Vh2( Th, P2 );
-Vh2 u2;
-'''
-script += pyff.InputScript( u2 = u2, declare = False )
-
-script += 'Vh1 u1 = u2;'
-
-script += pyff.OutputScript( u1 = 'vector' )
-
-u1_ff = script.get_output()['u1']
+u1_ff = pyff.interpolate( Th, u2, 'P2', 'P1' )
 
 figure(figsize = (6,6))
 
-# tricontourf( Th, proj*u2 )
-tricontourf( Th, u1_ff )
+tricontourf( Th, proj*u2 )
+# tricontourf( Th, u1_ff )
 Th.plot_triangles( color = 'k', lw = .5, alpha = .2 )
 tricontour( Th, Th.x**2 - Th.y**3, colors = ['w'], alpha = .3, linestyles = ['--'] )
 Th.plot_boundaries( clip_on = False, color = 'k' )

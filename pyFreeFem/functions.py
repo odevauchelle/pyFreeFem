@@ -1,5 +1,6 @@
 from pylab import savetxt, array
 from numpy import ndarray
+from scipy.sparse.linalg import spsolve
 
 import sys
 sys.path.append('./../')
@@ -128,3 +129,48 @@ def adaptmesh( Th, u = None, **kwargs ):
     Th.rename_boundary(int_to_label)
 
     return Th
+
+def interpolate( Th, u, P_in, P_out ):
+    '''
+    w = interpolate( Th, u, P_in, P_out )
+    '''
+
+    script = InputScript( Th = Th )
+
+    for fespace, fetype in { 'VhIn' : P_in, 'VhOut' : P_out }.items() :
+        script += 'fespace ' + edp_function( fespace, 'Th', fetype ) + ';'
+
+    script += 'VhIn uIn;'
+    script += InputScript( uIn = u, declare = False )
+    script += 'VhOut uOut = uIn;'
+    script += OutputScript( uOut = 'vector' )
+
+    return script.get_output()['uOut']
+
+
+def get_projector( Th, P_in, P_out ):
+    '''
+    P = get_projector( Th, P_in, P_out )
+    '''
+
+    script = InputScript( Th = Th )
+
+    for fespace, fetype in { 'VhIn' : P_in, 'VhOut' : P_out }.items() :
+        script += 'fespace ' + edp_function( fespace, 'Th', fetype ) + ';'
+
+    script += VarfScript(
+        GramianOO = 'int2d(Th)( v*u )',
+        fespaces = ( 'VhOut', 'VhOut' )
+        )
+
+    script += VarfScript(
+        GramianIO = 'int2d(Th)( v*u )',
+        fespaces = ( 'VhIn', 'VhOut' )
+        )
+
+    output = script.get_output()
+
+    GramianOO = output['GramianOO']
+    GramianIO = output['GramianIO']
+
+    return spsolve( GramianOO, GramianIO )
