@@ -43,8 +43,9 @@ u2 = output['u2']
 proj = spsolve( G[1], G[2] )
 u1 = proj*u2
 
-# print(shape(Proj))
-print(len( Th.x ))
+print( shape(proj) )
+print( len( Th.x ) )
+print( len( u2 ) )
 
 figure(figsize = (6,6))
 
@@ -57,5 +58,10 @@ axis('equal')
 axis('off')
 xticks([]), yticks([])
 # legend()
+
+# title('Projection on P1 space')
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 show()
