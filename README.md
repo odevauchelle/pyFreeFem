@@ -47,7 +47,7 @@ Creating a mesh with FreeFem++ can be useful by itself, for instance to calculat
 
 ## Documentation
 
-More examples can be found in the [documentation](./documentation.md).
+More examples can be found in the [documentation](./documentation/documentation.md).
 
 ## To do
 
