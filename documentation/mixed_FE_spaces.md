@@ -51,7 +51,7 @@ print( shape(proj) )
 print( len( Th.x ) )
 print( len( u2 ) )
 ```
-```
+```console
 >>> (81, 289)
 >>> 81
 >>> 289
