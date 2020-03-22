@@ -122,8 +122,8 @@ script += '''
 
 matrices = {
     'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
-    'Grammian' : 'int2d(Th)( u*v )',
-    'boundary_Grammian' : 'int1d(Th, 1, 2)( u*v )'
+    'Gramian' : 'int2d(Th)( u*v )',
+    'boundary_Gramian' : 'int1d(Th, 1, 2)( u*v )'
     }
 
 script += pyff.VarfScript( **matrices )
