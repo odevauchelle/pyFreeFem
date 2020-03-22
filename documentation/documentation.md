@@ -50,8 +50,8 @@ script += pyff.OutputScript( Th = 'mesh' )
 
 script += pyff.VarfScript(
     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
-    Grammian = 'int2d(Th)( u*v )',
-    boundary_Grammian = 'int1d(Th, 1, 2)( u*v )'
+    Gramian = 'int2d(Th)( u*v )',
+    boundary_Gramian = 'int1d(Th, 1, 2)( u*v )'
     )
 
 ff_output = script.get_output()
@@ -72,8 +72,8 @@ from scipy.sparse.linalg import spsolve
 import numpy as np
 
 epsilon = 1e-4
-M = - ff_output['stiffness'] + 1./epsilon*ff_output['boundary_Grammian']
-Source = ff_output['Grammian']*np.array( [1]*len( Th.x ) )
+M = - ff_output['stiffness'] + 1./epsilon*ff_output['boundary_Gramian']
+Source = ff_output['Gramian']*np.array( [1]*len( Th.x ) )
 u = spsolve( M, Source )
 
 pp.tricontourf( Th, u )
