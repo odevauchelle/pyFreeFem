@@ -126,7 +126,7 @@ To compute travel times through a closed box, we need to define the stream funct
 def Phi_sum( z ) :
     Phi = 0.*z
     for n in range( 1, n_modes ) :
-        Phi += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
+        Phi += Phi_n( z, n )
     return Phi
 ```
 That there are so many modes creates two problems:
@@ -134,19 +134,14 @@ That there are so many modes creates two problems:
 - High-frequency modes are exponentially close to zero deep under the top surface;
 - Computation time gets large (`n_modes*len(z)`).
 
-To bypass the first problem, we make each mode explicitly vanish beyond its caracteristic depth:
+To bypass the first problem, we make replace each mode with its expansion when `n*k*H` is too large:
 ```python
 def Phi_n( z, n = 1 ) :
-    shallow_z = imag(z) > -8./( n*k ) # deeper than this, the exponential virtually vanishes
-    try : # z is an array
-        Phi = z*0
-        Phi[shallow_z] = -cosh( n*k*( 1j*z[shallow_z] - H ) )
-        return Phi
-    except : # z is a single complex number
-        if shallow_z :
-            return -cosh( n*k*( 1j*z - H ) )
-        else :
-            return 0
+
+    if n*k*H < 10 :
+        return -2*cosh( n*k*( 1j*z - H ) )/( n*k*sinh( n*k*H ) )
+    else :
+        return -2*exp( -n*k*1j*z )/( n*k )
 ```
 To avoid prohibitively large computations, we will use an interpolator for the stream function. To do so, we first need to build the mesh.
 

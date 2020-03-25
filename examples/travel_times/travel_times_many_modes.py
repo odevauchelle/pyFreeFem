@@ -8,27 +8,19 @@ from numpy.ma import is_masked
 
 ################# PARAMETERS
 L = 1.
-H = .3
-epsilon = .05
+H = 1.5
+epsilon = .1
 npts = 20
-n_modes = 500
+n_modes = 200
 k = pi/L
-levels = logspace( -3, 0, 20 )
+levels = logspace( -4, 0, 20 )
 
 def Phi_n( z, n = 1 ) :
 
-    shallow_z = imag(z) > -8./( n*k ) # deeper than this, the exponential virtually vanishes
-
-    try : # z is an array
-        Phi = z*0
-        Phi[shallow_z] = -cosh( n*k*( 1j*z[shallow_z] - H ) )
-        return Phi
-
-    except : # z is a single complex number
-        if shallow_z :
-            return -cosh( n*k*( 1j*z - H ) )
-        else :
-            return 0
+    if n*k*H < 10 :
+        return -2*cosh( n*k*( 1j*z - H ) )/( n*k*sinh( n*k*H ) )
+    else :
+        return -2*exp( -n*k*1j*z )/( n*k )
 
 
 def Phi_sum( z ) :
@@ -36,7 +28,7 @@ def Phi_sum( z ) :
     Phi = 0.*z
 
     for n in range( 1, n_modes ) :
-        Phi += 2*Phi_n( z, n )/( n*k*sinh( n*k*H ) )
+        Phi += Phi_n( z, n )
 
     return Phi
 
@@ -57,7 +49,7 @@ script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
 
 for _ in range(3):
-    Th = pyff.adaptmesh( Th, iso = 1, hmax = epsilon/2, err = 5e-3 )
+    Th = pyff.adaptmesh( Th, iso = 1, hmax = epsilon/4, err = 5e-3 )
 
 ################ Phi Interpolator
 
@@ -140,9 +132,10 @@ for contour in contours.collections[:-1]:
     is_split += [ is_split_contour ]
 
 
-is_split = array(is_split)
+is_split = array( is_split )
 not_is_split = ~is_split
 not_is_split[where(is_split)[0][-1]] = True
+
 x_start = array(x_start)
 t = array(t)
 
@@ -154,9 +147,9 @@ ax.plot( x_start[is_split], t[is_split], color = trav_time_color, ls = '--', lab
 ax.legend(title = 'Contour')
 ax.set_xlabel( 'Starting position' )
 ax.set_ylabel( 'Travel time' )
-
-# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_trav_time' + '.svg'
-# savefig( fig_path_and_name , bbox_inches = 'tight' )
-# print(fig_path_and_name)
+ax.set_yscale('log')
+fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_trav_time' + '.svg'
+savefig( fig_path_and_name , bbox_inches = 'tight' )
+print(fig_path_and_name)
 
 show()
