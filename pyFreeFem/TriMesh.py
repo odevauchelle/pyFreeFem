@@ -188,12 +188,12 @@ class TriMesh( mptri.Triangulation ) :
             except :
                 edges = []
 
-            edges += [ edge[:-1] ] # each edge is properly oriented, but edges are not properly sorted
+            edges += [ edge[:-1] ] # each edge is properly oriented, but edges are not sorted at this point
 
             boundaries.update( { label : edges } )
 
         for label in boundaries.keys() :
-
+            
             segments = ordered_edges_to_segments( reorder_boundary( boundaries[label] ) )
 
             if segment_type == 'node_index' :
