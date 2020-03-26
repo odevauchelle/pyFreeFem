@@ -139,7 +139,9 @@ class TriMesh( mptri.Triangulation ) :
     def get_boundary_edges( self, label_type = 'int', index_type = 'node' ) :
 
         '''
-        A method to convert boundary segments into an array. Typically:
+        Method to convert boundary segments into an array.
+
+        Typically:
         { ( triangle_index, node_index_in_triangle ) : raw_label }
             -> [ start_node_index, end_node_index, int_label ]
         '''
@@ -170,7 +172,7 @@ class TriMesh( mptri.Triangulation ) :
     def get_boundaries( self, segment_type = 'node_index' ) :
 
         '''
-        Boundaries are a dictionnary indexed by label.
+        A boundary is a dictionnary indexed by label.
         Each value is a list of segments.
         Each segment is an oriented list of nodes, or two lists of coordinates
         '''
@@ -186,7 +188,7 @@ class TriMesh( mptri.Triangulation ) :
             except :
                 edges = []
 
-            edges += [ edge[:-1] ]
+            edges += [ edge[:-1] ] # each edge is properly oriented, but edges are not properly sorted
 
             boundaries.update( { label : edges } )
 
