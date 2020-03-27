@@ -1,125 +1,59 @@
-######################
 
 import numpy as np
+from itertools import permutations
 
-def find_disjunctions( seg_list ) :
+def concatenate_segments( tail, head) :
     '''
-    Find disjunctions (holes) in a list of segments.
+    body = concatenate_segments( tail, head )
+
+    Parameters:
+        tail (list) : list of integers
+        head (list) : list of integers
+
+    Returns:
+        body(list) or None: concatenated head and tail if they match
+    '''
+
+    if tail[-1] == head[0]:
+        return tail + head[1:]
+
+
+def edges_to_segments( edges ) :
+    '''
+    segments = edges_to_segments( edges )
+
+    Assemble individual edges into boundary segments. Might be unstable if nodes (integer) are repeated
+    in edges more than twice, that is, if the boundary is branching.
 
     Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        list of couples of nodes coordinates.
+        edges (list) : list of edges. An edge is a list of two nodes (integers).
 
     Returns :
-    ----------
-    disjuctions : numpy.array of indices
-        Indices of the disjunction segments
-
-    Example :
-    ----------
-    disjuctions = find_disjunction( array( [ [1,12], [12,3], [3,7], [4, 14], [14,1] ] ) )
-    >>> [3]
-
+        segments (list) : list of segments. A segment is a list of nodes.
     '''
 
-    if len( seg_list ) < 2 :
-        return seg_list
+    segments = edges.copy()
 
-    else :
-        return ( seg_list[ 1:-1, 0 ] - seg_list[ 0:-2, 1 ] ).nonzero()[0] + 1
+    keep_going = True
 
-def stitch_segment_list( seg_list, n, verbose = False ) :
+    while keep_going :
 
-    '''
-    Cut a segment list at location 'n', finds the next occurence of the end node, and stich the rest of the list there.
+        keep_going = False
 
-    Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        List of couples of nodes coordinates.
-    n : integer
-        Location of the disjuction to be mended.
+        for perm in permutations( range( len( segments ) ), 2 ) :
 
-    Returns :
-    ----------
-    mended_segment_list : numpy.array of indices
-        Indices of the disjunction segments
-    mending : Boolean
-        Whether the list of segment was mended
+            new_segment = concatenate_segments( segments[perm[0]], segments[perm[1]] )
 
-    Example :
-    ----------
-    stitch_segment_list( array( [ [1,12], [12,3], [7, 14], [3, 7], [14, 1 ] ] ), 2 )
-    >>> (array([[ 1, 12], [12,  3], [ 3,  7], [14,  1], [ 7, 14]]), True)
-    '''
+            if not new_segment is None :
 
-    try :
-        n2 = n + np.where( seg_list [ n:, 0  ] == seg_list[ ( n - 1 ), 1 ] )[0][0]
-        return np.concatenate( ( seg_list[ 0 : n ], seg_list[ n2 : ], seg_list[ n : n2 ] )  ), True
+                for i in sorted( perm, reverse = True ) :
+                    segments.pop( i )
 
-    except :
-        if verbose :
-            print('No possible reconnection of segment list. Returning initial segment list.')
-        return seg_list, False
+                segments += [ new_segment ]
 
-def reorder_boundary( seg_list ) :
-    '''
-    Reorder a list of segments until there is no disjunction left, or until the remaining disjunctions cannot be solved.
+                keep_going = True
 
-    Parameters :
-    ----------
-    seg_list : numpy.array of segments
-        List of couples of nodes coordinates.
-
-    Returns :
-    ----------
-    ordered_segment_list : numpy.array of indices
-        List of ordered segments, with the least possible disjuctions
-
-    Example :
-    ----------
-    reorder_boundary( [ [1,12], [12,3], [7, 14], [3, 7], [14, 1 ] ] )
-    >>> [[ 1 12], [12  3], [ 3  7], [ 7 14], [14  1]]
-    '''
-
-    keep_trying = True
-
-    seg_list = np.array(seg_list)
-
-    while keep_trying :
-
-        keep_trying = False
-
-        for disjunction_index in find_disjunctions( seg_list ) :
-
-            seg_list, mending = stitch_segment_list( seg_list, disjunction_index )
-
-            if mending :
-                keep_trying = True
                 break
-
-    return seg_list.tolist()
-
-def ordered_edges_to_segments( edges ) :
-
-    segments = []
-    segment = edges[0]
-    previous_edge = edges[0]
-
-    for edge in edges[1:] :
-
-        if edge[0] == previous_edge[1] :
-            segment += [ edge[1] ]
-
-        elif len(segment) > 0 :
-            segments += [ segment ]
-            segment = edge
-
-        previous_edge = edge
-
-    if len(segment) > 0 :
-        segments += [ segment ]
 
     return segments
 
@@ -151,6 +85,7 @@ def triangle_edge_to_node_edge( triangle_edge, triangles ) :
 
     return start_node_index, end_node_index
 
+# triangle_edge_to_node_edge = np.vectorize(triangle_edge_to_node_edge)
 
 def find_triangle_index( triangles, start_node, end_node ) :
     '''

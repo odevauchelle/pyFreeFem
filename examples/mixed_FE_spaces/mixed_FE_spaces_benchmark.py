@@ -54,8 +54,9 @@ xticks([]), yticks([])
 # legend()
 
 title('Interpolation on P1 space')
-fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg'
-savefig( fig_path_and_name , bbox_inches = 'tight' )
-print(fig_path_and_name)
+
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 show()

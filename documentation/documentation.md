@@ -143,6 +143,8 @@ A more useful mesh change, perhaps, is to [refine it](./documentation/adaptmesh.
 
 - [Refine](./adaptmesh.md) a mesh manually
 
+- [Extract](./boundary_values.md) the value of a field on a boundary
+
 - [Mix](./mixed_FE_spaces.md) finite-element spaces on the same mesh
 
 - Compute [travel times](./travel_time.md) along stream lines

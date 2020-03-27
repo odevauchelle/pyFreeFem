@@ -81,11 +81,11 @@ Th.plot_boundaries( color = 'k', clip_on = False )
 contours = ax.tricontour( Th, imag( Phi_value ), colors = ['tab:blue'], levels = levels )
 xticks([]); yticks([])
 ax.axis('equal'); ax.axis('off')
-#
 ax.set_title( str( n_modes ) + ' modes' )
-fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh' + '.svg'
-savefig( fig_path_and_name , bbox_inches = 'tight' )
-print(fig_path_and_name)
+
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh' + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 ############### TRAVEL TIMES
 
@@ -148,8 +148,9 @@ ax.legend(title = 'Contour')
 ax.set_xlabel( 'Starting position' )
 ax.set_ylabel( 'Travel time' )
 ax.set_yscale('log')
-fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_trav_time' + '.svg'
-savefig( fig_path_and_name , bbox_inches = 'tight' )
-print(fig_path_and_name)
+
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '_trav_time' + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 show()

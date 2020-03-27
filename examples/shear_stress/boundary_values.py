@@ -6,76 +6,26 @@ sys.path.append('./../../')
 
 import pyFreeFem as pyff
 
-script = pyff.edpScript('mesh Th = square( 3, 3);')
+script = pyff.edpScript('mesh Th = square( 20, 20 );')
 script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
 
+u = Th.x*( 1 - Th.y )**2
+boundary = Th.get_boundaries()[1]
 
-figure()
+
+
+
 ax = gca()
 
-#colorbar( tricontourf( Th, tau ) )
-Th.plot_boundaries( clip_on = False )
-Th.plot_triangles( ax = ax, labels = 'index', color = 'k', lw = .5, alpha = .2 )
-Th.plot_nodes( labels = 'index', color = 'grey' )
+ax.tricontourf( Th, u )
+Th.plot_boundaries( ax = ax, clip_on = False, color = 'k' )
+Th.plot_triangles( ax = ax, color = 'k', lw = .5, alpha = .2 )
 
+ax.plot( Th.x[boundary], Th.y[boundary], 'r--', clip_on = False, lw = 2 )
 
-
-edges = array( list(  Th.boundary_edges.keys() ) )[ array( list(  Th.boundary_edges.values() ) ) == 3 ]
-edges = [ pyff.triangle_edge_to_node_edge( e, Th.triangles ) for e in edges  ]
-edges = [ [1,12], [12,3], [7, 14], [3, 7], [14, 1 ] ]
-# edges = edges[::-1]
-
-def reorder_boundary( edges ):
-    '''
-    ordered_edges = reorder_boundary( edges )
-
-    Arguments:
-        edges (list) : list of edges. Each edge is a tuple of two node indices.
-    '''
-
-    segments = []
-
-    while len(edges) > 0 :
-
-        edge = edges.pop(0)
-
-        for segment in segments :
-
-            if segment[-1][-1] == edge[0] :
-                segment += [ edge ]
-                edge = []
-                break
-
-            elif segment[0][0] == edge[-1] :
-                segment = [ edge ] + segment
-                edge = []
-                break
-
-        if edge != [] :
-            segments += [ [ edge ] ]
-
-    return segments
-
-
-
-print('edges')
-print(edges)
-print(pyff.reorder_boundary(edges))
-print(reorder_boundary(edges))
-
-#
-# print('Th.get_boundary_edges()')
-# print( Th.get_boundary_edges() )
-#
-#
-#
-# #
-# # plot( Th.x[boundary_nodes], Th.y[boundary_nodes], color = 'red' )
-# #
-#
 # ax.legend()
-# ax.axis('equal'); ax.axis('off')
-# ax.set_xticks([]); ax.set_yticks([])
-#
-# show()
+ax.axis('equal'); ax.axis('off')
+ax.set_xticks([]); ax.set_yticks([])
+
+show()

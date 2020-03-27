@@ -169,12 +169,12 @@ class TriMesh( mptri.Triangulation ) :
 
         return edges
 
-    def get_boundaries( self, segment_type = 'node_index' ) :
+    def get_boundaries( self ) :
 
         '''
         A boundary is a dictionnary indexed by label.
         Each value is a list of segments.
-        Each segment is an oriented list of nodes, or two lists of coordinates
+        Each segment is an oriented list of nodes
         '''
 
         boundaries = {}
@@ -193,22 +193,8 @@ class TriMesh( mptri.Triangulation ) :
             boundaries.update( { label : edges } )
 
         for label in boundaries.keys() :
-            
-            segments = ordered_edges_to_segments( reorder_boundary( boundaries[label] ) )
 
-            if segment_type == 'node_index' :
-                boundaries[label] = segments
-
-            elif segment_type == 'xy' :
-
-                x = []
-                y = []
-
-                for segment in segments :
-                    x += list( self.x[ segment ] ) + [np.nan]
-                    y += list( self.y[ segment ] ) + [np.nan]
-
-                boundaries[label] = [ x[:-1], y[:-1] ]
+            boundaries[label] = edges_to_segments(  boundaries[label] )
 
         return boundaries
 
@@ -265,15 +251,17 @@ class TriMesh( mptri.Triangulation ) :
         if ax is None :
             ax = gca()
 
-        boundaries = self.get_boundaries( segment_type = 'xy' )
+        boundaries = self.get_boundaries()
 
         for label in boundaries.keys() :
 
             boundary_kwargs = { 'label' : label }
-            # print(kwargs)
             boundary_kwargs.update( kwargs )
 
-            ax.plot( *boundaries[label], **boundary_kwargs )
+            for segment in boundaries[label] :
+                x, y = self.x[segment], self.y[segment]
+
+            ax.plot( x, y, **boundary_kwargs )
 
     def plot_edges( self, labels = None, ax = None, **kwargs ) :
 
@@ -309,6 +297,6 @@ if __name__ == '__main__' :
     mesh.plot_nodes( labels = 'index', color = color )
     mesh.plot_edges( labels = 'label', color = 'red' )
 
-    print( mesh.get_boundaries( segment_type  = 'xy') )
+    print( mesh.get_boundaries() )
 
     show()
