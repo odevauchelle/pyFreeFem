@@ -1,6 +1,8 @@
 # PyFreeFem documentation
 
-## Finite element matrices
+## Basic examples
+
+### Finite element matrices
 
 To get finite element matrices, we first need to create a mesh, and define a finite element space. The VarfBlock function then creates, and exports, the matrix corresponding to a variational formulation:
 
@@ -28,7 +30,7 @@ print(stiffness)
 ...
 ```
 
-## Solve a simple problem
+### Solve Poisson's equation
 
 We first create a mesh, and import the associated matrices.
 
@@ -84,64 +86,16 @@ Here is the result:
 
 ![Mesh with a hole](../figures/solve_2.svg)
 
-## Mess with the mesh
 
-We now create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./documentation/IO.md) to and from FreeFem++ are what pyFreeFem was written for.
-```python
-import pyFreeFem as pyff
-
-# Create mesh with FreeFem++
-script = pyff.edpScript( '''
-    border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-    mesh Th = buildmesh( Circle(150) );
-    ''' )
-script += pyff.OutputScript( Th = 'mesh' )
-Th = script.get_output()['Th']
-
-# Change mesh
-for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
-    Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
-
-Th.rename_boundary( {1:'initial', 2:'new'} )
-```
-The mesh looks like this:
-
-![Messed up mesh](../figures/mesh_IO_mesh.svg)
-
-We want to solve the Poisson equation on this new mesh. Let us first calculate the finite-elements matrices we need.
-
-```python
-# Export mesh back to FreeFem
-script = pyff.InputScript( Th = Th )
-
-# calculate FEM matrices
-script += '''
-    fespace Vh( Th, P1 ) ;
-    Vh u, v ;
-    '''
-
-matrices = {
-    'stiffness' : 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
-    'Gramian' : 'int2d(Th)( u*v )',
-    'boundary_Gramian' : 'int1d(Th, 1, 2)( u*v )'
-    }
-
-script += pyff.VarfScript( **matrices )
-matrices = script.get_output()
-```
-We may now solve our finite-element problem as [above](#solve-a-simple-problem). Here is the result:
-
-![Poisson on messed up mesh](../figures/mesh_IO_field.svg)
-
-A more useful mesh change, perhaps, is to [refine it](./documentation/adaptmesh.md).
-
-# Detailed examples
+## More examples
 
 - [Input and output](./IO.md) to and from FreeFem++
 
 - [Build](./build_your_own_mesh.md) a mesh from scratch
 
 - [Refine](./adaptmesh.md) a mesh manually
+
+- [Change the mesh](./mess_with_the_mesh.md) manually
 
 - [Evaluate](./boundary_values.md) a field on a boundary
 
