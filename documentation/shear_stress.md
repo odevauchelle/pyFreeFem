@@ -3,7 +3,7 @@
 We want to evaluate the shear stress a laminar viscous flow excerts on a wave bottom. To do so,
 we first need to slove Poisson's equation for the flow velocity $u$:
 
-$\nabla^2 u = -1$
+$$\nabla^2 u = -1$$
 
 The shear stress $\tau$ is then the gradient of $u$, which we need to evaluate on the bottom.
 
