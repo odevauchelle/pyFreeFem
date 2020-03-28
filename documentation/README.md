@@ -101,4 +101,6 @@ Here is the result:
 
 - [Mix](./mixed_FE_spaces.md) finite-element spaces on the same mesh
 
+- Evaluate the [shear stress](./shear_stress.md) of a viscous flow on a wavy bottom
+
 - Compute [travel times](./travel_time.md) along stream lines

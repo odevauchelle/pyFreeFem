@@ -14,9 +14,9 @@ import pyFreeFem as pyff
 
 width = 5.
 height = 1.
-amplitude = .2
+amplitude = .3
 k = 3*2*pi/width
-npts = 3
+npts = 10
 
 ###########################
 #
@@ -38,7 +38,7 @@ script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 
-Th = pyff.adaptmesh( Th, hmax = height/5 )
+Th = pyff.adaptmesh( Th, hmax = height/15 )
 
 ###########################
 #
@@ -93,8 +93,7 @@ tau = sqrt( dx_u**2 + dy_u**2 )
 
 bottom_label = 2
 
-print( Th.boundary_edges )
-
+boundary_nodes = Th.get_boundaries()
 
 ###########################
 #
@@ -102,29 +101,30 @@ print( Th.boundary_edges )
 #
 ############################
 
-figure()
-ax = gca()
+tau_color = 'tab:red'
+boundary_color = 'black'
 
-# u_1 = pyff.interpolate( Th, u, 'P2', 'P1' )
-colorbar( tricontourf( Th, tau ) )
-Th.plot_triangles( ax = ax, color = 'k', lw = .5, alpha = .2 )
-Th.plot_boundaries( clip_on = False, color = 'grey'  )
-# ax.legend()
-ax.axis('equal'); ax.axis('off')
-ax.set_xticks([]); ax.set_yticks([])
+fig, (ax_flow, ax_tau) = subplots( nrows = 2, sharex = True, figsize = 6*array([1,.6]) )
+
+ax_flow.tricontourf( Th, pyff.interpolate( Th, u, 'P2', 'P1' ) )
+Th.plot_triangles( ax = ax_flow, color = 'k', lw = .5, alpha = .2 )
+
+for label in 1,3,4 :
+    for nodes in  boundary_nodes[label] :
+        ax_flow.plot( Th.x[ nodes ], Th.y[nodes], color = boundary_color, linestyle = '--', clip_on = False )
+
+for nodes in  boundary_nodes[bottom_label] :
+    ax_flow.plot( Th.x[ nodes ], Th.y[ nodes ], color = boundary_color, linestyle = '-', clip_on = False )
+    ax_tau.plot( Th.x[nodes ], tau[nodes], color = tau_color )
+
+ax_flow.axis('equal'); ax_flow.axis('off')
+ax_flow.set_yticks([])
+
+ax_tau.set_xlabel('Cross-stream coordinate $x$')
+ax_tau.set_ylabel(r'Shear stress $\tau$')
+
+# fig_path_and_name = './../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg'
+# savefig( fig_path_and_name , bbox_inches = 'tight' )
+# print(fig_path_and_name)
 
 show()
-
-# fespace Vh( Th, P1 );
-# Vh u,v;
-# ''')
-#
-# script += pyff.OutputScript( Th = 'mesh' )
-#
-# script += pyff.VarfScript(
-#     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
-#     Grammian = 'int2d(Th)( u*v )',
-#     boundary_Grammian = 'int1d(Th, 1, 2)( u*v )'
-#     )
-#
-# ff_output = script.get_output()
