@@ -7,6 +7,12 @@ $$\nabla^2 u = -1$$
 
 The shear stress $\tau$ is then the gradient of $u$, which we need to evaluate on the bottom.
 
+Here is what we want (colors show flow velocity $u$):
+
+![Shear stress](./../figures/shear_stress.svg)
+
+
+
 ## Mesh
 
 We first need to build the mesh. Our parameters are:
@@ -93,6 +99,3 @@ We can now evaluate the shear stress, and plot it:
 for nodes in  boundary_segments  :
     plot( Th.x[nodes ], tau[nodes] )
 ```
-Here is the result (colors show flow velocity):
-
-![Shear stress](./../figures/shear_stress.svg)
