@@ -1,5 +1,5 @@
 from pylab import savetxt, array
-from numpy import ndarray
+from numpy import ndarray, float64
 
 import sys
 sys.path.append('./../')
@@ -118,7 +118,7 @@ class edpInput :
             elif type(source) is int :
                 self.type = 'int'
 
-            elif type(source) is float :
+            elif type(source) in [ float, float64 ] :
                 self.type = 'real'
 
             elif type(source) in [ list, array, ndarray ] :
