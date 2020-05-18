@@ -1,6 +1,6 @@
 # Mess with the mesh
 
-Here, we create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./documentation/IO.md) to and from FreeFem++ are just what pyFreeFem was written for.
+Here, we create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./IO.md) to and from FreeFem++ are just what pyFreeFem was written for.
 ```python
 import pyFreeFem as pyff
 
@@ -47,4 +47,4 @@ We may now solve our finite-element problem as [above](#solve-a-simple-problem).
 
 ![Poisson on messed up mesh](../figures/mesh_IO_field.svg)
 
-A more useful mesh change, perhaps, is to [refine it](./documentation/adaptmesh.md).
+A more useful mesh change, perhaps, is to [refine it](./adaptmesh.md).
