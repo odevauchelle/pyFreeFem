@@ -43,7 +43,7 @@ matrices = {
 script += pyff.VarfScript( **matrices )
 matrices = script.get_output()
 ```
-We may now solve our finite-element problem as [above](#solve-a-simple-problem). Here is the result:
+We may now [solve](./README.md) our finite-element problem. Here is the result:
 
 ![Poisson on messed up mesh](../figures/mesh_IO_field.svg)
 
