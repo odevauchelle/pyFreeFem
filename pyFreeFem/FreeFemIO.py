@@ -56,8 +56,16 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_
     else :
         FreeFem_lines = FreeFem_str.split('\n')
 
-    nb_row, nb_col, is_symmetric, nb_coef = map( lambda x : int(x), FreeFem_lines[3].split() )
-    I, J, coef = loadstr( '\n'.join(  FreeFem_lines[4:-1] ) ).T
+    line_index = 1
+
+    while True :
+        try :
+            nb_row, nb_col, is_symmetric, nb_coef = map( lambda x : int(x), FreeFem_lines[line_index].split() )
+            break
+        except :
+            line_index += 1
+
+    I, J, coef = loadstr( '\n'.join(  FreeFem_lines[ line_index + 1:-1] ) ).T
     I = np.array( list( map( lambda x: int(x), I ) ) ) - 1
     J = np.array( list( map( lambda x: int(x), J ) ) ) - 1
     coef = np.array( list( map( lambda x: float(x), coef ) ) )
@@ -203,7 +211,8 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
 
     return np.array(data)
 
-def run_FreeFem( edp_str, verbose = False, stdin = None ) :
+
+def run_FreeFem( edp_str = None, verbose = False, stdin = None ) :
     '''
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
@@ -211,9 +220,13 @@ def run_FreeFem( edp_str, verbose = False, stdin = None ) :
     if stdin is None :
         stdin = []
 
-    edp_str = edp_str.replace( '"',  "\"'\"" )
-
-    command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
+    try :
+        edp_str = edp_str.replace( '"',  "\"'\"" )
+        command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
+        print_error_message = True # default
+    except :
+        command = 'FreeFem++'
+        print_error_message = False # to get FreeFem version as output
 
     with subprocess.Popen( [command], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
 
@@ -228,22 +241,40 @@ def run_FreeFem( edp_str, verbose = False, stdin = None ) :
             return output.decode('utf-8')
 
         else :
-            print('\n-------------------')
-            print('FreeFem++ error :')
-            print('-------------------')
-            print(output.decode('utf-8'))
-            print('-------------------\n')
 
-            if verbose :
+            if print_error_message :
+
                 print('\n-------------------')
-                print('edp file :')
+                print('FreeFem++ error :')
                 print('-------------------')
-                for line_number, line in enumerate( edp_str.split('\n') ) :
-                    print( str( line_number + 1 ) + '    ' + line )
+                print(output.decode('utf-8'))
                 print('-------------------\n')
 
-            return None
+                if verbose :
+                    print('\n-------------------')
+                    print('edp file :')
+                    print('-------------------')
+                    for line_number, line in enumerate( edp_str.split('\n') ) :
+                        print( str( line_number + 1 ) + '    ' + line )
+                    print('-------------------\n')
 
+                return None
+
+            else :
+                return output.decode('utf-8')
+
+def get_FreeFem_version( parse = True ) :
+
+    version = run_FreeFem()
+
+    if not parse :
+        return version
+
+    else :
+        version = version.split('\n')[0]
+        version = version.split('version :')[1]
+        version = version.strip()
+        return version
 
 if __name__ == '__main__' :
 

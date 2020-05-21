@@ -68,8 +68,8 @@ if __name__ == '__main__' :
     print( edp_function( 'adaptmesh', 'Th', err = 0.2  )  )
 
     print( FreeFemize( 'u' ) )
-    print( FreeFemize( 'toto_ça$$$_vélo$_35' ) )
-    print( headerFrame(FreeFemize( 'toto_ça$$$____vélo$_35' , type = 'header' )) )
-    print( flagize( 'début' ) )
+    print( FreeFemize( 'toto_ca$$$_velo$_35' ) )
+    print( headerFrame(FreeFemize( 'toto_ca$$$____velo$_35' , type = 'header' )) )
+    print( flagize( 'debut' ) )
 
     print( input_to_stdin([4.3, 6, 7]) )
