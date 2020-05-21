@@ -64,12 +64,13 @@ The result looks like this (dashed white lines show `Th.x**2 - Th.y**3`):
 
 ![Projection](./../figures/mixed_FE_spaces.svg)
 
-## Projection and interpolation
-
 In fact, the above procedure is encapsulated into the `get_projector` fucntion of pyFreeFem:
 ```python
 proj = pyff.get_projector( Th, 'P2', 'P1' )
 ```
+
+## Projection and interpolation
+
 We would like to compare the result of a projection to that of an interpolation, as FreeFem++ does it when we write:
 ```c++
 Vh1 u1 = u2;
