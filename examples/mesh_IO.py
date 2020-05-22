@@ -10,19 +10,21 @@ import pyFreeFem as pyff
 # Create mesh with FreeFem++
 script = pyff.edpScript( '''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
-mesh Th = buildmesh( Circle(150) );
+mesh Th = buildmesh( Circle(50) );
 ''' )
 
 script += pyff.OutputScript( Th = 'mesh' )
 
 Th = script.get_output()['Th']
 
-
 # Change mesh
-for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
+for triangle_index in sample( range( len( Th.triangles ) ), 6 ) :
     Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
 
 Th.rename_boundary( {1:'initial', 2:'new'} )
+
+# print(Th.get_boundaries())
+
 
 # Export mesh back to FreeFem
 
@@ -66,8 +68,10 @@ figs = {}
 
 figs['mesh'] = pp.figure()
 Th.plot_triangles( color = 'k', lw = .5, alpha = .2  )
+
 Th.plot_boundaries()
-pp.legend(title = 'Boundary')
+pp.legend( title = 'Boundary' )
+
 x_lim, y_lim = pp.gca().get_xlim(), pp.gca().get_ylim()
 
 figs['field'] = pp.figure()

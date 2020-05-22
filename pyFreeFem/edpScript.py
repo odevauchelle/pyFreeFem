@@ -72,10 +72,10 @@ class edpOutput :
         elif self.type == 'mesh' :
             return FreeFem_str_to_mesh( parse_FreeFem_output( FreeFem_output, self.flag ) )
 
-        elif self.type is 'real':
+        elif self.type == 'real':
             return  float( parse_FreeFem_output( FreeFem_output, self.flag ) )
 
-        elif self.type is 'int':
+        elif self.type == 'int':
             return  int( parse_FreeFem_output( FreeFem_output, self.flag ) )
 
 class edpInput :
@@ -143,7 +143,7 @@ class edpInput :
         else :
             source = self.source
 
-        if self.type is 'mesh' :
+        if self.type == 'mesh' :
 
             if self.tempfile is None :
                 self.tempfile = NamedTemporaryFile( suffix = '.msh' )
@@ -161,7 +161,7 @@ class edpInput :
             for key in variable_names.keys() :
                 edp_str = edp_str.replace( key, variable_names[key] )
 
-        elif self.type is 'vector' :
+        elif self.type == 'vector' :
 
             if self.tempfile is None :
                 self.tempfile = NamedTemporaryFile( suffix = '.ffv' )
@@ -191,9 +191,9 @@ class edpInput :
         elif self.type in [ 'real', 'int' ] :
 
             if self.declare :
-                if self.type is 'real':
+                if self.type == 'real':
                     edp_str += 'real _number_name_;\n'
-                if self.type is 'int' :
+                if self.type == 'int' :
                     edp_str += 'int _number_name_;\n'
 
             edp_str += 'cin >> _number_name_;\n'
@@ -218,7 +218,7 @@ class edpInput :
             else :
                 source = self.source
 
-            if self.type is 'int' :
+            if self.type == 'int' :
                 source = int(source)
 
 

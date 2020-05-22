@@ -20,7 +20,7 @@ def edp_function( function_name, *args, **kwargs ) :
     for arg_name in kwargs.keys() :
         edp_str += ' ' + arg_name + ' = ' + str( kwargs[arg_name] ) + ','
 
-    if edp_str[-1] is ',' :
+    if edp_str[-1] == ',' :
         edp_str = edp_str[:-1]
 
     edp_str += ' )'

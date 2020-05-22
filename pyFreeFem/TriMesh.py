@@ -26,7 +26,7 @@
 
 
 import matplotlib.tri as mptri
-from pylab import gca, mean, array
+from pylab import gca, mean, array, nan
 
 if __name__ == '__main__' :
     from meshTools.segments import *
@@ -214,10 +214,10 @@ class TriMesh( mptri.Triangulation ) :
 
                 x, y = mean( self.x[triangle] ), mean( self.y[triangle] )
 
-                if labels is 'label' :
+                if labels == 'label' :
                     ax.text( x, y , self.triangle_labels[i], **label_style )
 
-                elif labels is 'index' :
+                elif labels == 'index' :
                     ax.text( x, y , i, **label_style )
 
         return triangles_plot
@@ -238,10 +238,10 @@ class TriMesh( mptri.Triangulation ) :
 
             for i in range( len( self.x ) ) :
 
-                if labels is 'label' :
+                if labels == 'label' :
                     ax.text( self.x[i], self.y[i], self.node_labels[i], **label_style )
 
-                elif labels is 'index' :
+                elif labels == 'index' :
                     ax.text( self.x[i], self.y[i], i, **label_style )
 
         return nodes_plot
@@ -251,17 +251,20 @@ class TriMesh( mptri.Triangulation ) :
         if ax is None :
             ax = gca()
 
-        boundaries = self.get_boundaries()
-
-        for label in boundaries.keys() :
+        for label, segments in self.get_boundaries().items() :
 
             boundary_kwargs = { 'label' : label }
             boundary_kwargs.update( kwargs )
 
-            for segment in boundaries[label] :
-                x, y = self.x[segment], self.y[segment]
+            x = []
+            y = []
 
-            ax.plot( x, y, **boundary_kwargs )
+            for segment in segments :
+
+                x += [nan] + list( self.x[segment] )
+                y += [nan] + list( self.y[segment] )
+
+            ax.plot(x, y, **boundary_kwargs )
 
     def plot_edges( self, labels = None, ax = None, **kwargs ) :
 
@@ -276,7 +279,7 @@ class TriMesh( mptri.Triangulation ) :
 
             edge_plot = ax.plot( x, y, **kwargs )
 
-            if labels is 'label' :
+            if labels == 'label' :
                 label_style = dict(va = 'center', ha = 'center', color = edge_plot[0].get_color() )
                 ax.plot( mean(x), mean(y), 'ow', ms = 12 )
                 ax.text( mean(x), mean(y), self.boundary_edges[edge], **label_style )

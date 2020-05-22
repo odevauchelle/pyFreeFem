@@ -42,7 +42,7 @@ def parse_FreeFem_output( FreeFem_str, flag ) :
 
     return FreeFem_str.split( flag + '\n' )[1]
 
-def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_matrix = None ) :
+def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_matrix = None, verbose = False, max_header_length = 15 ) :
     '''
     '''
 
@@ -56,24 +56,45 @@ def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_
     else :
         FreeFem_lines = FreeFem_str.split('\n')
 
-    line_index = 1
+    for line_index in range( max_header_length ) :
 
-    while True :
         try :
-            nb_row, nb_col, is_symmetric, nb_coef = map( lambda x : int(x), FreeFem_lines[line_index].split() )
+            header_numbers = [ int( word ) for word in FreeFem_lines[ line_index ].split() ]
+            header_numbers[1] # there should be at least two integers in this line
             break
-        except :
-            line_index += 1
 
-    I, J, coef = loadstr( '\n'.join(  FreeFem_lines[ line_index + 1:-1] ) ).T
-    I = np.array( list( map( lambda x: int(x), I ) ) ) - 1
-    J = np.array( list( map( lambda x: int(x), J ) ) ) - 1
-    coef = np.array( list( map( lambda x: float(x), coef ) ) )
+        except :
+            pass
+
+    try :
+        nb_row, nb_col, is_symmetric, nb_coef = header_numbers # FreeFem++ 3.6
+        python_style_index = False # indices start at 1
+
+    except :
+        nb_row, nb_col, nb_coef, _, _, _, _ = header_numbers # FreeFem++ 4.6
+        python_style_index = True # indices start at 0
+
+    I, J, coef = loadstr( '\n'.join(  FreeFem_lines[ line_index + 1 : line_index + 1 + nb_coef ] ) ).T
+
+    I = np.array([ int(x) for x in I ] )
+    J = np.array([ int(x) for x in J ] )
+    coef = np.array( [ float(x) for x in coef ] )
+
+    if not python_style_index :
+        I -= 1
+        J -= 1
+
+
+    if verbose :
+        print('Header line', FreeFem_lines[ line_index ] )
+        print('nb_row, nb_col, nb_coef', nb_row, nb_col, nb_coef)
+        print('len(I)',len(I))
+
 
     if sparse_matrix is None :
         return default_sparse_matrix( ( coef, (I, J) ), ( nb_row, nb_col ) )
 
-    elif sparse_matrix is 'raw' :
+    elif sparse_matrix == 'raw' :
         return ( coef, (I, J) ), ( nb_row, nb_col )
 
     else :
@@ -186,11 +207,11 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
     '''
 
 
-    if dtype is 'float' :
+    if dtype == 'float' :
         def conversion_try( x ) :
             return float( x )
 
-    elif dtype is 'int' :
+    elif dtype == 'int' :
         def conversion_try( x ) :
             return int( x )
 
@@ -207,7 +228,7 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
     data = []
 
     for data_line in data_str.split('\n')[skip_rows:] :
-        data += [ list( map( conversion, data_line.split( delimiter ) ) ) ]
+        data += [ [ conversion( number ) for number in data_line.split( delimiter ) ] ]
 
     return np.array(data)
 

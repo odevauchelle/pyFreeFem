@@ -1,5 +1,6 @@
 import numpy
 import matplotlib as mpl
+import subprocess
 
 import sys
 sys.path.append('./../')
@@ -34,4 +35,34 @@ with open('version.md','w') as the_file :
     the_file.write( version_str + '\n' )
     the_file.write( "```\n" )
 
-print(version_str)
+print( version_str )
+
+
+################################
+#
+#   RUN TESTS
+#
+################################
+
+test_path = './../examples/'
+
+test_files = [
+    'quick_example.py',
+    'finite_element_matrices.py',
+    'mesh_IO.py',
+    'boundary_values.py'
+    ]
+
+if True :
+    for test_file in test_files :
+
+        print('-----------------')
+        print('Try to run ' + test_path + test_file  + '?' )
+
+        if input() in ['n', 'no'] :
+            break
+
+        subprocess.call( [ 'python3', test_path + test_file ] )
+        print('-----------------')
+
+print('All tests ran.')
