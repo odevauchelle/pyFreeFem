@@ -49,6 +49,8 @@ Creating a mesh with FreeFem++ can be useful by itself, for instance to calculat
 
 More examples can be found in the [documentation](./documentation/README.md).
 
+Latest tested [version](./version/version.md).
+
 ## To do
 
 - Import mesh, vectors and matrices to FreeFem++ without writing in temporary file

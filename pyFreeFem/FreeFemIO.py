@@ -263,6 +263,23 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None ) :
             else :
                 return output.decode('utf-8')
 
+def parse_FreeFem_version( version ) :
+
+    try :
+        version = version.split('\n')[0]
+
+        for keyword in 'version :', 'version' :
+            version = version.split(keyword)[-1]
+
+        version = version.strip()
+
+        return version
+
+    except :
+        return version
+
+
+
 def get_FreeFem_version( parse = True ) :
 
     version = run_FreeFem()
@@ -271,10 +288,9 @@ def get_FreeFem_version( parse = True ) :
         return version
 
     else :
-        version = version.split('\n')[0]
-        version = version.split('version :')[1]
-        version = version.strip()
-        return version
+        return parse_FreeFem_version(version)
+
+
 
 if __name__ == '__main__' :
 
