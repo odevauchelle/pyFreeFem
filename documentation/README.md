@@ -97,6 +97,8 @@ Here is the result:
 
 - [Change the mesh](./mess_with_the_mesh.md) manually
 
+- [Solve](./Helmholtz.md) an eigenvalue problem
+
 - [Evaluate](./boundary_values.md) a field on a boundary
 
 - [Mix](./mixed_FE_spaces.md) finite-element spaces on the same mesh

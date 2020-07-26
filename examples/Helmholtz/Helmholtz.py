@@ -46,9 +46,9 @@ axis('equal')
 xticks([]); yticks([])
 axis('off')
 
-savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh.svg' , bbox_inches = 'tight' )
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh.svg' , bbox_inches = 'tight' )
 
-
+print(eigenvalues)
 
 fig, axs = subplots( nrows = int( len( eigenvalues )/ncols ), ncols = ncols, figsize = (7,7) )
 axs = axs.flatten()
@@ -71,5 +71,5 @@ for ax in axs :
     ax.set_yticks([])
 
 
-savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
 show()
