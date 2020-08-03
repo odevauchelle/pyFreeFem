@@ -95,11 +95,10 @@ class TriMesh( mptri.Triangulation ) :
             triangle_labels = [0]*len( self.triangles )
 
         self.triangle_labels = triangle_labels
+        self.boundary_edges = {}
 
-        if boundary_edges is None :
-            boundary_edges = {}
-
-        self.boundary_edges = boundary_edges
+        if not boundary_edges is None :
+            self.add_boundary_edges( boundary_edges )
 
     def add_boundary_edges( self, boundary_edges, label = None ) :
 
@@ -110,13 +109,13 @@ class TriMesh( mptri.Triangulation ) :
         except :
 
             try :
-                # assume [ [ start_node, end_node, label ], ... ]
-                self.boundary_edges.update( edges_to_boundary_edges( edges ) )
+                # assume [ [ triangle_index, node_in_triangle, label ], ... ]
+                self.boundary_edges.update( edges_to_boundary_edges( boundary_edges ) )
 
             except :
                 # assume [ first_node, second_node, ... ]
                 if label is None :
-                    invent_label( self.boundary_edges.values() )
+                    label = invent_label( self.boundary_edges.values() )
 
                 edges = [ list( edge_nodes_to_triangle_edge( edge[:-1], self.triangles ) ) + [edge[-1]] for edge in nodes_to_edges( boundary_edges, label = label ) ]
 
@@ -234,7 +233,7 @@ class TriMesh( mptri.Triangulation ) :
 
         if not labels is None :
 
-            label_style = dict(va = 'center', ha = 'center', color = 'w')
+            label_style = dict( va = 'center', ha = 'center', color = 'w' )
 
             for i in range( len( self.x ) ) :
 
