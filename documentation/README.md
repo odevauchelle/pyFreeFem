@@ -95,6 +95,8 @@ Here is the result:
 
 - [Refine](./adaptmesh.md) a mesh manually
 
+- [Compute](./rectangle_groove.md) the flow in a microfluidics groove
+
 - [Change the mesh](./mess_with_the_mesh.md) manually
 
 - [Solve](./Helmholtz.md) an eigenvalue problem
