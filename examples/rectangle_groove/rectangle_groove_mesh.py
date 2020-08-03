@@ -1,7 +1,7 @@
 from pylab import *
 
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 import pyFreeFem as pyff
 
 ##############################
@@ -39,8 +39,6 @@ Th.plot_nodes( labels = 'index', ax = ax, color = 'tab:blue' )
 ax.axis('equal'); ax.axis('off')
 ax.set_xticks([]); ax.set_yticks([])
 
-savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '_initial_mesh.svg' , bbox_inches = 'tight' )
-
 ##############################
 #
 # add boundaries
@@ -72,15 +70,16 @@ Th = pyff.adaptmesh(Th, hmax = .03, iso = 1)
 figure()
 ax = gca()
 
-Th.plot_triangles(ax = ax)
+Th.plot_triangles(ax = ax, lw = 0.5)
 Th.plot_boundaries(ax = ax)
 ax.legend(title = 'Boundaries')
 
 ax.axis('equal'); ax.axis('off')
 ax.set_xticks([]); ax.set_yticks([])
 
+for i in plt.get_fignums() :
+    figure(i)
+    savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_' + str(i) + '.svg' , bbox_inches = 'tight' )
 
 
 show()
-
-# script = pyff.InputScript( D = D, W = W )
