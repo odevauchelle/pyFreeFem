@@ -42,7 +42,7 @@ real discharge;
 discharge = int2d(Th)(phi);
 '''
 
-script += pyff.OutputScript( phi = 'vector', Th = 'mesh', discharge = 'real' )
+script += pyff.OutputScript( discharge = 'real' ) #phi = 'vector', Th = 'mesh', discharge = 'real' )
 
 
 ##############################
@@ -75,17 +75,25 @@ def get_discharge( W, D = 1 ) :
 
     FF_out = script.get_output( Th = Th )
 
-    return FF_out['Th'], FF_out['phi'], FF_out['discharge']
+    return FF_out['discharge'] # FF_out['Th'], FF_out['phi'],
 
-Th, u, discharge = get_discharge( W = .2 )
+W = logspace(log10(.3),1.5,15)
+Q = [get_discharge( W ) for W in W ]
 
-tricontourf(Th,u)
-Th.plot_triangles(lw = .5, color = 'w')
-Th.plot_boundaries( zorder = 10, clip_on = False)
+# Th, u, discharge = get_discharge( W = .2 )
 
-ax = gca()
-ax.axis('equal'); ax.axis('off')
-ax.set_xticks([]); ax.set_yticks([])
+# tricontourf(Th,u)
+# Th.plot_triangles(lw = .5, color = 'w')
+# Th.plot_boundaries( zorder = 10, clip_on = False)
+#
+# ax = gca()
+# ax.axis('equal'); ax.axis('off')
+# ax.set_xticks([]); ax.set_yticks([])
+
+plot(W,Q/Q_SW)
+xlabel( 'Groove aspect ratio  $W$' )
+ylabel('Relative discharge  $3 Q/W$')
+xscale('log')
 
 savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
 

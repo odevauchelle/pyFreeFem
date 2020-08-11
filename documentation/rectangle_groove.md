@@ -137,3 +137,56 @@ tricontourf(Th,u)
 This is what we finally get:
 
 ![Velocity field](../figures/rectangle_groove_solve.svg)
+
+## Influence of aspect ratio on discharge
+
+When the groove aspect ratio is large enough, the shallow-water approximation applies to most of it. Neglecting the neighborhood of its sides, the total (dimensionless) discharge reads
+
+<img src="https://render.githubusercontent.com/render/math?math=\displaystyle \iint u \, \mathrm{d}x \, \mathrm{d}y \approx \dfrac{ W D^3}{3}">
+
+We now check numerically how good this approximation is.
+
+### Compute the finite-element discharge
+
+We simply add the coresponding integral at the end of our script, and make sure we declare the result as an output:
+
+``` Python
+script += '''
+real discharge;
+discharge = int2d(Th)(phi);
+'''
+script += pyff.OutputScript( discharge = 'real' )
+```
+
+### Turn the FreeFem++ script into a function
+
+We can call the FreeFem script multiple times with different input parameters. Here, the initial mesh will change at each call. This allow us to nest the call to the script into a function (see [full code](../examples/rectangle_groove/rectangle_groove_function.py)):
+
+```Python
+def get_discharge( W, D = 1 ) :
+
+    x = array([ .5,-.5,-.5,.5 ])*W
+    y = array([0,0,-1,-1])*D
+
+    Th = pyff.TriMesh( x, y )
+
+    Th.add_boundary_edges( [1,2,3,0] )
+    Th.add_boundary_edges( [0,1] )
+
+    FF_out = script.get_output( Th = Th )
+
+    return FF_out['discharge']
+```
+
+We may then call this function at will:
+
+```Python
+W = logspace( log10(.3), 1.5, 15 )
+Q = [get_discharge( W ) for W in W ]
+```
+
+The result looks like this:
+
+![Discharge along a groove](../figures/rectangle_groove_function.svg)
+
+We find that the goove needs to be about 20 times wider than it is deep for the shallow-water approximation to yield a predicion with an error of less than 10%.
