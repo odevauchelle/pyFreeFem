@@ -73,3 +73,10 @@ if __name__ == '__main__' :
     print( flagize( 'debut' ) )
 
     print( input_to_stdin([4.3, 6, 7]) )
+
+def edp_pprint( edp_str ) :
+    for line_number, line in enumerate( edp_str.split('\n') ) :
+        print( str( line_number + 1 ) + '    ' + line )
+
+def get_edp_line( edp_str, line_number ) :
+     return edp_str.split('\n')[ line_number - 1 ]

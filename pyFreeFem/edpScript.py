@@ -389,8 +389,8 @@ class edpScript :
 
                     input.tempfile.close()
 
-    def run( self, **kwargs_input ) :
-        freefem_output = run_FreeFem( self.get_edp( **kwargs_input ), stdin =  self.get_stdin( **kwargs_input ) )
+    def run( self, verbose = False, **kwargs_input ) :
+        freefem_output = run_FreeFem( self.get_edp( **kwargs_input ), stdin =  self.get_stdin( **kwargs_input ), verbose = verbose )
         self.clean_temp_files()
         return freefem_output
 
@@ -404,5 +404,8 @@ class edpScript :
 
         return FreeFem_data
 
-    def get_output( self, **kwargs_input ) :
-        return self.parse( self.run( **kwargs_input ) )
+    def get_output( self, verbose = False, **kwargs_input ) :
+        return self.parse( self.run( verbose = verbose,  **kwargs_input ) )
+
+    def pprint( self ) :
+        edp_pprint( self.get_edp() )

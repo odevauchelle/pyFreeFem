@@ -34,13 +34,23 @@ import warnings
 from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
-from .FreeFemTools.edpTools import flagize, input_to_stdin
+from .FreeFemTools.edpTools import *
 
 default_sparse_matrix = csr_matrix
 
 def parse_FreeFem_output( FreeFem_str, flag ) :
 
     return FreeFem_str.split( flag + '\n' )[1]
+
+def parse_FreeFem_error_message( message ) :
+    '''
+     Error line number 225, in file
+    '''
+
+    try :
+        return int( message.split('Error line number')[1].split(', in file')[0] )
+    except :
+        return None
 
 def FreeFem_str_to_matrix( FreeFem_str, matrix_name = None, flag = None, sparse_matrix = None, verbose = False, max_header_length = 15 ) :
     '''
@@ -268,15 +278,21 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None ) :
                 print('\n-------------------')
                 print('FreeFem++ error :')
                 print('-------------------')
-                print(output.decode('utf-8'))
+                print( output.decode( 'utf-8' ) )
                 print('-------------------\n')
+                print('Corresponding line in FreeFem script:\n')
+                try :
+                    print( get_edp_line( edp_str, parse_FreeFem_error_message( output.decode( 'utf-8' ) ) ) + '\n' )
+                    print('(Use edpScript.pprint to display full script.)\n')
+                except :
+                    print('Could not get corresponding line.\n')
+
 
                 if verbose :
                     print('\n-------------------')
                     print('edp file :')
                     print('-------------------')
-                    for line_number, line in enumerate( edp_str.split('\n') ) :
-                        print( str( line_number + 1 ) + '    ' + line )
+                    edp_pprint( edp_str )
                     print('-------------------\n')
 
                 return None

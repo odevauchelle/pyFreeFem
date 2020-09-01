@@ -9,10 +9,14 @@ real smallRadius = .3;
 border outerCircle( t = 0, 2*pi ){ x = cos(t); y = 0.8*sin(t); }
 border innerCircle( t = 2*pi, 0 ){ x = .5 + smallRadius*cos(t); y = smallRadius*sin(t); }
 mesh Th = buildmesh( outerCircle(100) + innerCircle(40) );
+''')
 
+script.pprint()
+
+script += '''
 fespace Vh( Th, P1 );
 Vh u,v;
-''')
+'''
 
 script += pyff.OutputScript( Th = 'mesh' )
 

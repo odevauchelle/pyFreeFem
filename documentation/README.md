@@ -2,9 +2,9 @@
 
 ## Basic examples
 
-### Finite element matrices
+### Write and run FreeFem++ scripts
 
-To get finite element matrices, we first need to create a mesh, and define a finite element space. The VarfBlock function then creates, and exports, the matrix corresponding to a variational formulation:
+The `edpScript` object is basically a [FreeFem++ script](https://doc.freefem.org/tutorials/poisson.html). For instance, we can create a mesh like so:
 
 ```python
 import pyFreeFem as pyff
@@ -12,12 +12,63 @@ import pyFreeFem as pyff
 script = pyff.edpScript('''
 border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
 mesh Th = buildmesh( Circle(20) );
+''' )
+```
+To display the complete script, just do
+```python
+script.pprint()
+```
+Here is the script:
+```console
+1    
+2    /////////////////////////////
+3    //
+4    //    UNNAMED BLOCK START
+5    //
+6    /////////////////////////////
+7    
+8    
+9    border Circle( t = 0, 2*pi ){ x = cos(t); y = sin(t); }
+10    mesh Th = buildmesh( Circle(20) );
+11    
+12    
+13    
+14    /////////////////////////////
+15    //
+16    //    UNNAMED BLOCK END
+17    //
+18    /////////////////////////////
+```
+To add new lines to the script, just do
+
+```python
+script += 'plot(Th);'
+```
+
+Finally, to run the script with FreeFem++, just call the `edpScript.run` fonction:
+
+```python
+script.run()
+```
+You should see the mesh appear in a FreeFem++ window.
+
+### Finite element matrices
+
+To get finite element matrices, we first need to create a mesh, and define a finite element space:
+
+```python
 fespace Vh( Th, P1 );
 Vh u,v;
-''' )
+```
 
-# Create and export stiffness matrix
+The `VarfScript` function then creates, and exports, the matrix corresponding to a variational formulation:
+
+```python
 script += pyff.VarfScript( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )')
+```
+We now need to run FreeFem and collect its output, with the `get_output` function:
+
+```python
 stiffness = script.get_output()['stiffness']
 print(stiffness)
 ```
