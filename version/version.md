@@ -7,7 +7,7 @@ Latest test ran with:
 0.2
 
 > Python:
-3.7.3 (default, Dec 20 2019, 18:57:59) 
+3.7.3 (default, Jul 25 2020, 13:03:44) 
 [GCC 8.3.0]
 
 > FreeFem++:
