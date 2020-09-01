@@ -1,6 +1,8 @@
 # Mess with the mesh
 
-Here, we create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./IO.md) to and from FreeFem++ are just what pyFreeFem was written for.
+Here, we create a mesh with FreeFem++, import it as a TriMesh, change its boundaries and export it back to FreeFem++. [Exports and imports](./IO.md) to and from FreeFem++ are just what pyFreeFem was written for. The complete code is [here](../examples/mesh_IO.py).
+
+We first build a mesh with FreeFem:
 ```python
 import pyFreeFem as pyff
 
@@ -11,9 +13,15 @@ script = pyff.edpScript( '''
     ''' )
 script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
+```
 
-# Change mesh
-for triangle_index in sample( range( len( Th.triangles ) ), 20 ) :
+We now pick a few edges at random, and call them boundaries:
+
+
+```python
+from pylab import choice
+
+for triangle_index in choice( range( len( Th.triangles ) ), 6 ) :
     Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
 
 Th.rename_boundary( {1:'initial', 2:'new'} )

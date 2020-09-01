@@ -1,13 +1,14 @@
 # Shear stress on a wavy bottom
 
 We want to evaluate the shear stress a laminar viscous flow excerts on a wave bottom. To do so,
-we first need to slove Poisson's equation for the flow velocity $u$:
+we first need to slove Poisson's equation for the flow velocity *u*:
 
-$$\nabla^2 u = -1$$
+<img src="https://render.githubusercontent.com/render/math?math=\nabla^2 u = -1">
 
-The shear stress $\tau$ is then the gradient of $u$, which we need to evaluate on the bottom.
 
-Here is what we want (colors show flow velocity $u$):
+The shear stress <img src="https://render.githubusercontent.com/render/math?math=\tau"> is then the gradient of *u*, which we need to evaluate on the bottom.
+
+Here is what we want (colors show flow velocity *u*):
 
 ![Shear stress](./../figures/shear_stress.svg)
 

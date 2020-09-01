@@ -1,6 +1,5 @@
 import matplotlib.pyplot as pp
-from tempfile import NamedTemporaryFile
-from random import sample
+from pylab import choice
 
 import sys
 sys.path.append('./../')
@@ -18,7 +17,7 @@ script += pyff.OutputScript( Th = 'mesh' )
 Th = script.get_output()['Th']
 
 # Change mesh
-for triangle_index in sample( range( len( Th.triangles ) ), 6 ) :
+for triangle_index in choice( range( len( Th.triangles ) ), 6 ) :
     Th.boundary_edges.update( { ( triangle_index, 0 ) : 2 } )
 
 Th.rename_boundary( {1:'initial', 2:'new'} )
