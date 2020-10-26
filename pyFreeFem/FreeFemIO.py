@@ -30,6 +30,7 @@ import subprocess
 from scipy.sparse import csr_matrix
 from tempfile import NamedTemporaryFile
 import warnings
+from platform import system
 
 from .TriMesh import TriMesh #, triangle_edge_to_node_edge
 from .meshTools.segments import triangle_edge_to_node_edge
@@ -243,7 +244,7 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
     return np.array(data)
 
 
-def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = 'default' ) :
+def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None ) :
     '''
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
@@ -253,7 +254,10 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = 'defa
 
     temporary_files = []
 
-    if platform == 'default': # Linux & MacOS
+    if platform is None :
+        platform = system()
+
+    if platform in [ 'Linux', 'Darwin' ] : # Linux or MacOS
 
         try :
             edp_str = edp_str.replace( '"',  "\"'\"" )
@@ -265,7 +269,7 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = 'defa
 
         Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash")
 
-    else : # assumes Windows, and write edp code in temporaryFaile from Stanisław Żukowski (Oct. 2020)
+    elif platform == 'Windows' : # write edp code in temporaryFaile from Stanisław Żukowski (Oct. 2020)
 
         try :
             with NamedTemporaryFile( suffix = '.edp', mode = 'w', delete = False ) as edp_temp_file:
@@ -280,6 +284,9 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = 'defa
             print_error_message = False # to get FreeFem version as output
 
         Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash")
+
+    else :
+        print('Unable to identify platform. Cannot run FreeFem++.')
 
     with subprocess.Popen( **Popen_kwargs ) as proc :
 
