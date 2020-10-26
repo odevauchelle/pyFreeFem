@@ -17,7 +17,7 @@
 #
 # Olivier Devauchelle
 #
-# Many thanks to Eric Lajeunesse, Anais Abramian, Valentin Jules & Hugo Chauvet.
+# Many thanks to Eric Lajeunesse, Anais Abramian, Valentin Jules, Hugo Chauvet, Stanisław Żukowski.
 #
 # When used in a scientific publication, please cite:
 #

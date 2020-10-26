@@ -243,7 +243,7 @@ def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :
     return np.array(data)
 
 
-def run_FreeFem( edp_str = None, verbose = False, stdin = None ) :
+def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = 'default' ) :
     '''
     Run FreeFem++ on script edp_str, and returns Popen output.
     '''
@@ -251,20 +251,46 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None ) :
     if stdin is None :
         stdin = []
 
-    try :
-        edp_str = edp_str.replace( '"',  "\"'\"" )
-        command = 'FreeFem++ -v 0 <( printf "' + edp_str + '" )'
-        print_error_message = True # default
-    except :
-        command = 'FreeFem++'
-        print_error_message = False # to get FreeFem version as output
+    temporary_files = []
 
-    with subprocess.Popen( [command], stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash" ) as proc :
+    if platform == 'default': # Linux & MacOS
+
+        try :
+            edp_str = edp_str.replace( '"',  "\"'\"" )
+            command = [ 'FreeFem++ -v 0 <( printf "' + edp_str + '" )' ]
+            print_error_message = True # default
+        except :
+            command = [ 'FreeFem++' ]
+            print_error_message = False # to get FreeFem version as output
+
+        Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash")
+
+    else : # assumes Windows, and write edp code in temporaryFaile from Stanisław Żukowski (Oct. 2020)
+
+        try :
+            with NamedTemporaryFile( suffix = '.edp', mode = 'w', delete = False ) as edp_temp_file:
+                edp_temp_file.write( edp_str )
+                temporary_files += [edp_temp_file]
+
+            print_error_message = True  # default
+            command = [ 'FreeFem++', '-v', '0', edp_temp_file.name ]
+
+        except :
+            command = [ 'FreeFem++' ]
+            print_error_message = False # to get FreeFem version as output
+
+        Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash")
+
+    with subprocess.Popen( **Popen_kwargs ) as proc :
 
         if verbose :
             print('\nRunning FreeFem++...')
 
         output, error = proc.communicate( input = input_to_stdin( stdin ).encode() ) # Freefem outputs errors in console
+
+        for temporary_file in temporary_files :
+            temporary_file.close()
+
 
         if not proc.returncode :
             if verbose :
