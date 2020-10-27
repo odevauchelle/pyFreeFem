@@ -283,7 +283,7 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None 
             command = [ 'FreeFem++' ]
             print_error_message = False # to get FreeFem version as output
 
-        Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, executable="/bin/bash")
+        Popen_kwargs = dict( args = command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
 
     else :
         print('Unable to identify platform. Cannot run FreeFem++.')
