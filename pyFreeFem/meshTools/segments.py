@@ -1,5 +1,6 @@
 
 import numpy as np
+import warnings
 from itertools import permutations
 
 def concatenate_segments( tail, head) :
