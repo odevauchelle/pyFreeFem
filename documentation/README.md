@@ -159,3 +159,5 @@ Here is the result:
 - Evaluate the [shear stress](./shear_stress.md) of a viscous flow on a wavy bottom
 
 - Compute [travel times](./travel_time.md) along stream lines
+
+- [Visous flow](./Poisson_in_wedge.md) in a sharp-cornered channel
