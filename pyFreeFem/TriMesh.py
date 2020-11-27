@@ -245,12 +245,22 @@ class TriMesh( mptri.Triangulation ) :
 
         return nodes_plot
 
-    def plot_boundaries( self, ax = None, **kwargs ) :
+    def plot_boundaries( self, labels = None, ax = None, **kwargs ) :
 
         if ax is None :
             ax = gca()
 
-        for label, segments in self.get_boundaries().items() :
+        if labels is None :
+            labels = self.get_boundaries().keys()
+
+        try:
+            labels[0]
+        except:
+            labels = [labels] # assume single label
+
+        for label in labels :
+
+            segments = self.get_boundaries()[label]
 
             boundary_kwargs = { 'label' : label }
             boundary_kwargs.update( kwargs )
