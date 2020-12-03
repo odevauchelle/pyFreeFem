@@ -254,7 +254,7 @@ class TriMesh( mptri.Triangulation ) :
             labels = self.get_boundaries().keys()
 
         try:
-            labels[0]
+            enumerate(labels)
         except:
             labels = [labels] # assume single label
 
