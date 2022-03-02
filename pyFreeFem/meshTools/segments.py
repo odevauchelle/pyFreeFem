@@ -154,6 +154,21 @@ def invent_label( existing_labels ) :
     existing_int_labels = [ label for label in existing_labels if type(label) is int ]
     return max( existing_int_labels + [0] ) + 1
 
+
+def node_index_to_triangle_index_edges( edges, triangles, label = 1 ) :
+    '''
+    triangle_index_edges = edges_node_index_egdes_to_triangle_edges( edges, triangles, label = 1 )
+
+    Convert a list of segments indexed by node to a list of segment indexed by triangle.
+
+    Arguments:
+    edges : a list of segments indexed by node ( [ [i, j], ... ], where i and i are node indices )
+    triangles : a triangulation
+    label : the label of the edges
+    '''
+    return [ list( edge_nodes_to_triangle_edge( edge, triangles ) ) + [ label ] for edge in edges ]
+
+
 if __name__ == '__main__' :
 
     from pylab import *

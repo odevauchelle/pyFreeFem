@@ -5,7 +5,7 @@ sys.path.append('./../../')
 
 import pyFreeFem as pyff
 
-theta =  linspace( 0, pi, 25 )
+theta =  linspace( 0, pi, 15 )
 top = cos(theta), 0.5*sin(theta)
 
 theta =  linspace( -pi, 0, len(theta) )[1:-1]
@@ -32,6 +32,8 @@ for Th in [ Th, Th_refined ] :
     figure( fig_index, figsize = (5,5))
 
     Th.plot_triangles( lw = .75, alpha = .5 )
+    # Th.plot_nodes( labels = 'index' )
+
     Th.plot_boundaries()
 
     legend()

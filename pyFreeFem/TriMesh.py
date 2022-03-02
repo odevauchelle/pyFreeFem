@@ -100,26 +100,39 @@ class TriMesh( mptri.Triangulation ) :
         if not boundary_edges is None :
             self.add_boundary_edges( boundary_edges )
 
+
     def add_boundary_edges( self, boundary_edges, label = None ) :
+        '''
+        Add a boundary.
+        '''
 
         try :
             # assume { (triangle_index, node_in_triangle) : label, ...  }
+            boundary_edges.keys() # check if dictionnary before updating
             self.boundary_edges.update( boundary_edges )
 
         except :
 
             try :
                 # assume [ [ triangle_index, node_in_triangle, label ], ... ]
-                self.boundary_edges.update( edges_to_boundary_edges( boundary_edges ) )
+                boundary_edges[0][2] # check format; label value implies triangle-based indexing
+                self.add_boundary_edges( edges_to_boundary_edges( boundary_edges ) )
 
             except :
-                # assume [ first_node, second_node, ... ]
+
                 if label is None :
                     label = invent_label( self.boundary_edges.values() )
 
-                edges = [ list( edge_nodes_to_triangle_edge( edge[:-1], self.triangles ) ) + [edge[-1]] for edge in nodes_to_edges( boundary_edges, label = label ) ]
+                try :
+                    # assume [ [i,j], [k,l], ... ] where i, j, k, l are node node_indices
+                    boundary_edges[0][1] # check format;
+                    self.add_boundary_edges( node_index_to_triangle_index_edges( boundary_edges, self.triangles, label = label ) )
 
-                self.boundary_edges.update( edges_to_boundary_edges( edges ) )
+                except :
+                    # assume [ first_node, second_node, ... ]
+                    edges = [ [ boundary_edges[i], boundary_edges[i + 1] ] for i in range( len(boundary_edges) - 1 ) ]
+
+                    self.add_boundary_edges( edges, label = label )
 
 
     def get_boundary_label_conversion( self ) :
