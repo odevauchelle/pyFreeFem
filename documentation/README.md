@@ -150,6 +150,8 @@ Here is the result:
 
 - [Change the mesh](./mess_with_the_mesh.md) manually
 
+- [Name boundaries](./boundary_names.md) and keep track of them
+
 - [Solve](./Helmholtz.md) an eigenvalue problem
 
 - [Evaluate](./boundary_values.md) a field on a boundary

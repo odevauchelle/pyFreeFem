@@ -136,7 +136,7 @@ class TriMesh( mptri.Triangulation ) :
 
 
     def get_boundary_label_conversion( self ) :
-        return label_conversion( self.boundary_edges.values() )
+        return label_conversion( list( self.boundary_edges.values() ) )
 
     def rename_boundary( self, new_names, verbose = False ) :
 

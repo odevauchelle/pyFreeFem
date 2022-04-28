@@ -60,12 +60,28 @@ def edges_to_segments( edges ) :
 
 def label_conversion( labels ) :
 
-    labels = list( set( labels ) )
-    int_labels = range( 1, len( labels ) + 1 )
+    kept_labels = []
+    changed_labels = []
 
-    int_to_label, label_to_int =  dict( zip( labels, int_labels ) ), dict( zip( int_labels, labels ) )
+    for label in list( set( labels ) ) :
 
-    return int_to_label, label_to_int
+        if isinstance( label, ( int, np.int64 ) ) :
+            kept_labels += [ label ]
+
+        else :
+            changed_labels += [ label ]
+
+    # make sure order is consistent; not guaranteed by set
+    changed_labels.sort( key = lambda label: ( type( label ).__name__, label ) )
+
+    new_int_label_start = invent_label( kept_labels )
+
+    new_int_labels = list( range( new_int_label_start, new_int_label_start + len( changed_labels ) ) )
+
+    int_labels = kept_labels + new_int_labels
+    labels = kept_labels + changed_labels
+
+    return dict( zip( labels, int_labels ) ), dict( zip( int_labels, labels ) )
 
 
 def triangle_edge_to_node_edge( triangle_edge, triangles ) :
@@ -171,26 +187,46 @@ def node_index_to_triangle_index_edges( edges, triangles, label = 1 ) :
 
 if __name__ == '__main__' :
 
-    from pylab import *
-    import matplotlib.tri as tri
+    from random import shuffle
 
-    theta =  linspace( 0, 2*pi, 6 )
-    x, y = cos(theta), sin(theta)
-    x, y = append(x,0), append(y,0)
+    # from pylab import *
+    # import matplotlib.tri as tri
+    #
+    # theta =  linspace( 0, 2*pi, 6 )
+    # x, y = cos(theta), sin(theta)
+    # x, y = append(x,0), append(y,0)
+    #
+    # triangles = array( [ [i, i + 1, len(x)-1] for i in range(len(x)-1) ] )
+    #
+    # edge_nodes = range(len(x)-1)
+    # label = 'toto'
+    #
+    # print(triangles)
+    #
+    # mesh = tri.Triangulation( x, y, triangles = triangles )
+    #
+    # triplot(mesh)
+    # plot( x[edge_nodes], y[edge_nodes] )
+    #
+    # print( edges_to_boundary_edges( nodes_to_edges( edge_nodes, label ) ) )
+    # labels = ['toto','tortue', 1, 6, '3', 45.6, 12, 'chat', 35, '54' ]
+    labels = [5,'5',12,12.3]
 
-    triangles = array( [ [i, i + 1, len(x)-1] for i in range(len(x)-1) ] )
+    print( invent_label( labels ) )
 
-    edge_nodes = range(len(x)-1)
-    label = 'toto'
+    # for table in label_conversion( labels )[0] :
+    print('------')
 
-    print(triangles)
+    tables = []
 
-    mesh = tri.Triangulation( x, y, triangles = triangles )
+    for _ in range(10) :
+        tables += [ label_conversion( labels )[1] ]
+        shuffle( labels )
 
-    triplot(mesh)
-    plot( x[edge_nodes], y[edge_nodes] )
+    for key in tables[0].keys() :
 
-    print( edges_to_boundary_edges( nodes_to_edges( edge_nodes, label ) ) )
-    print( invent_label( ['toto','tortue'] ) )
-    axis('equal')
-    show()
+        print( (key,), ':', *[ (table[key],) for table in tables ] )
+
+
+    # axis('equal')
+    # show()
