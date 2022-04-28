@@ -110,9 +110,14 @@ def adaptmesh( Th, u = None, **kwargs ):
     script = InputScript( Th = 'mesh' )
 
     try :
-        u_is_one = u in [ '1', 1 , 1. ]
-    except :
+        u[0]/1. # u is probably an array
         u_is_one = False
+
+    except :
+        try :
+            u_is_one = u in [ '1', 1 , 1. ]
+        except :
+            u_is_one = False
 
     if u is None or u_is_one :
         script += 'Th = ' + edp_function( 'adaptmesh', 'Th', **kwargs )  + ';'
