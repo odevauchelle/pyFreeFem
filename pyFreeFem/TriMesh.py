@@ -26,13 +26,15 @@
 
 
 import matplotlib.tri as mptri
-from pylab import gca, mean, array, nan
+from pylab import gca, mean, array, nan, arange
 
 if __name__ == '__main__' :
     from meshTools.segments import *
+    from meshTools.polygon_triangulate import polygon_triangulate
 
 else :
     from .meshTools.segments import *
+    from .meshTools.polygon_triangulate import polygon_triangulate
 
 TriMesh_structure ='''
 TriMesh attributes:
@@ -85,14 +87,17 @@ class TriMesh( mptri.Triangulation ) :
 
         super( TriMesh, self ).__init__( x, y, triangles )
 
-
         if node_labels is None :
             node_labels = [0]*len( self.x )
 
         self.node_labels = node_labels
 
         if triangle_labels is None :
-            triangle_labels = [0]*len( self.triangles )
+            if self.triangles is None :
+                triangle_labels = []
+            else :
+                triangle_labels = [0]*len( self.triangles )
+
 
         self.triangle_labels = triangle_labels
         self.boundary_edges = {}
@@ -305,6 +310,66 @@ class TriMesh( mptri.Triangulation ) :
                 label_style = dict(va = 'center', ha = 'center', color = edge_plot[0].get_color() )
                 ax.plot( mean(x), mean(y), 'ow', ms = 12 )
                 ax.text( mean(x), mean(y), self.boundary_edges[edge], **label_style )
+
+
+
+def TriMesh_from_polygon( points, label = None ) :
+    '''
+    Creates a mesh from a polygon boundary.
+    Based on polygon_triangulate by John Burkardt (https://people.sc.fsu.edu/~jburkardt/py_src/polygon_triangulate/polygon_triangulate.html).
+    This function cannot handle holes.
+
+    mesh = TriMesh_from_polygon( points, label = None )
+
+    '''
+
+    the_mesh = TriMesh( *array( points ).T, triangles = polygon_triangulate( len( points ), *array( points ).T ) )
+
+    if not label is None :
+
+        if label is 'auto' :
+            the_mesh.add_boundary_edges( arange( len( points ) ) )
+
+        else :
+            the_mesh.add_boundary_edges( arange( len( points ) ), label = label )
+
+    return the_mesh
+
+
+def TriMesh_from_boundaries( boundaries, labels = None ) :
+    '''
+    Creates a mesh from a list of boundaries, each a list of points. The boundaries are counterclockwise ordered.
+
+    mesh = TriMesh_from_boundaries( boundaries, labels = None )
+    '''
+
+    if labels is None :
+        labels = [None]*len(boundaries)
+
+    all_points = []
+    point_indices = [ 0, 0 ]
+
+    for boundary in boundaries :
+        all_points += list( boundary[:-1] )
+
+    the_mesh = TriMesh_from_polygon( all_points )
+
+    for i, boundary in enumerate( boundaries ) :
+
+        point_indices[1] += len( boundary ) - 1
+
+        indices = arange( point_indices[0], point_indices[1] + 1 )
+
+        if indices[-1] >= len( all_points ) :
+            indices[-1] = 0
+
+        the_mesh.add_boundary_edges( indices, labels[i] )
+
+        point_indices[0] = point_indices[1]
+
+    return the_mesh
+
+
 
 
 

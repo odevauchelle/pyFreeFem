@@ -144,6 +144,8 @@ Here is the result:
 
 - [Build](./build_your_own_mesh.md) a mesh from scratch
 
+- [Create](./mesh_from_polygon.md) a mesh based on its boundary
+
 - [Refine](./adaptmesh.md) a mesh manually
 
 - [Compute](./rectangle_groove.md) the flow in a microfluidics groove
