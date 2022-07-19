@@ -18,8 +18,10 @@ wire_points = [ [0,0],[0,.2],[.1,.4] ]
 # plot( *array(wire_points).T, 'o', color = 'grey')
 
 Th = pyff.TriMesh( *array( box_points + wire_points ).T )
-Th.add_boundary_edges( [ len( box_points ) ] + list( arange( len( box_points ) ) ) + [ len( box_points ) ] , 'box' )
+# Th.add_boundary_edges( [ len( box_points ) ] + list( arange( len( box_points ) ) ) + [ len( box_points ) ] , 'box' )
+Th.add_boundary_edges( range( len( box_points ) ) , 'box' )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
+
 
 #########################
 #
@@ -27,15 +29,18 @@ Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_p
 #
 #########################
 
+ax_mesh = gca()
 
-Th.plot_triangles( color = 'grey', labels = 'index' )
-Th.plot_boundaries()
-Th.plot_nodes( color = 'grey', labels = 'index' )
+Th.plot_triangles( color = 'grey', labels = 'index', ax = ax_mesh )
+Th.plot_boundaries(ax = ax_mesh)
+Th.plot_nodes( color = 'grey', labels = 'index' , ax = ax_mesh )
 
 legend(loc = 'upper center')
 
-axis('scaled')
-axis('off')
+ax_mesh.axis('scaled')
+ax_mesh.axis('off')
+ax_mesh.set_xticks([])
+ax_mesh.set_yticks([])
 
 
 # savefig( '../../figures/wire_mesh.svg', bbox_inches = 'tight')
@@ -79,5 +84,37 @@ for i, ( name, mat ) in enumerate( matrices.items() ) :
     ax.set_title(name)
 
 # savefig( '../../figures/wire_matrices.svg', bbox_inches = 'tight')
+
+#########################
+#
+# Absorbing boundary conditions
+#
+#########################
+
+from scipy.sparse.linalg import spsolve
+
+epsilon = 1e-6
+ones_vector = Th.x*0 + 1.
+
+v = spsolve(
+    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] ),
+    matrices['BoundaryGramian_box']*ones_vector
+    )
+
+figure()
+ax_v = gca()
+
+ax_v.tricontourf( Th, v )
+ax_v.axis('scaled')
+ax_v.axis('off')
+
+Th.plot_boundaries(ax = ax_v, clip_on = False)
+Th.plot_triangles(ax = ax_v, color = 'w', alpha = .3 )
+
+ax_v.set_xticks([])
+ax_v.set_yticks([])
+
+# savefig( '../../figures/wire_field.svg', bbox_inches = 'tight')
+
 
 show()
