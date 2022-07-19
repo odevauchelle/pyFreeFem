@@ -102,13 +102,13 @@ As a warm-up, we can assume that the wire is a perfect conductor (absorbing boun
 We further assume that the bottom line (which we haven't defined as a boundary) is reflective. Altogether, the weak formulation of our problem reads ($\hat{v}$ is the test function):
 
 $$
-\iint \nabla \hat{v} \cdot \nabla v + \dfrac{1}{\epsilon} \int_{\mathrm{box} \union \mathrm{wire}} \hat{v} v - \dfrac{1}{\epsilon} \int_{\mathrm{box}} \hat{v}
+\iint \nabla \hat{v} \cdot \nabla v + \dfrac{1}{\epsilon} \int_{ \mathrm{box} \cup \mathrm{wire} } \hat{v} v - \dfrac{1}{\epsilon} \int_{\mathrm{box}} \hat{v}
 $$
 
 where the reflective boundary does not appear. In matrix form, the above problem reads
 
 $$
-\left( \mathbf{S} + \dfrac{1}{\epsilon} \left( \mathbf{G}_{\mathrm{box}} + \mathbf{G}_{\mathrm{wire}} \right) \right) \cdot V = \dfrac{1}{\epsilon} \mathbf{G}_{\mathrm{box}} \cdot \mathbb{1}
+\left( \mathbf{S} + \dfrac{1}{\epsilon} \left( \mathbf{G}_{\mathrm{box}} + \mathbf{G}_{\mathrm{wire}} \right) \right) \cdot V = \dfrac{1}{\epsilon} \mathbf{G}_{\mathrm{box}} \cdot \mathbb{1} = 0
 $$
 
 We can use `spsolve` to solve this linear problem:
