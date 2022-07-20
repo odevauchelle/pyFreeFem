@@ -52,7 +52,7 @@ ax_mesh.set_yticks([])
 #
 #########################
 
-script = pyff.InputScript( Th = 'mesh' )
+script = pyff.InputScript( Th = Th )
 
 script += pyff.edpScript('fespace Vh( Th, P1 );')
 
@@ -63,13 +63,11 @@ name_to_index, index_to_name = Th.get_boundary_label_conversion()
 for name, index in name_to_index.items() :
     variational_forms.update( { 'BoundaryGramian_' + name : 'int1d(Th,' + str(index) + ')( u*v )' } )
 
-variational_forms['wire_u_dv_ds'] = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( v*N.x*dy(u) - v*N.y*dx(u) )'
-
 print(variational_forms)
 
 script += pyff.VarfScript( **variational_forms )
 
-matrices = script.get_output( Th = Th )
+matrices = script.get_output()
 
 #########################
 #
@@ -77,7 +75,7 @@ matrices = script.get_output( Th = Th )
 #
 #########################
 
-fig, axs = subplots( ncols = len( matrices ), figsize = (10,3), sharey = True )
+fig, axs = subplots( ncols = len( matrices ), figsize = (8,3), sharey = True )
 
 for i, ( name, mat ) in enumerate( matrices.items() ) :
 
@@ -96,30 +94,17 @@ for i, ( name, mat ) in enumerate( matrices.items() ) :
 from scipy.sparse.linalg import spsolve
 
 epsilon = 1e-6
+ones_vector = Th.x*0 + 1.
 
-for _ in range(2) :
-
-    try :
-        Th = pyff.adaptmesh( Th, v, iso = 1 )
-        matrices = script.get_output( Th = Th )
-    except :
-        pass
-
-    ones_vector = Th.x*0 + 1.
-
-    v = spsolve(
-        matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] ),
-        1/epsilon*matrices['BoundaryGramian_box']*ones_vector
-        )
-
-
+v = spsolve(
+    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] ),
+    matrices['BoundaryGramian_box']*ones_vector
+    )
 
 figure()
 ax_v = gca()
 
-v_contours = ax_v.tricontourf( Th, v )
-# colorbar(v_contours)
-
+ax_v.tricontourf( Th, v )
 ax_v.axis('scaled')
 ax_v.axis('off')
 
@@ -131,44 +116,5 @@ ax_v.set_yticks([])
 
 # savefig( '../../figures/wire_field.svg', bbox_inches = 'tight')
 
-#########################
-#
-# Current in wire
-#
-#########################
-
-from scipy.sparse import lil_matrix
-
-wire_Heaviside = lil_matrix( shape( matrices['stiffness'] ) )
-
-wire_indexes = Th.get_boundaries()['wire'][0]
-wire_indexes = wire_indexes[::-1]
-
-for i in range( len( wire_indexes ) ) :
-    for j in range( i + 1 ) :
-        wire_Heaviside[ wire_indexes[i], wire_indexes[j] ] = 1
-
-# print(wire_Heaviside.toarray())
-
-Q_mat = -wire_Heaviside*matrices['stiffness']
-
-Q = Q_mat*v
-# ax_v.tricontourf( Th, Q )
-print( Q[wire_indexes] )
-
-#########################
-#
-# Finite-conductivity wire
-#
-#########################
-
-kappa = 10
-
-v = spsolve(
-    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + Q_mat - kappa*matrices['wire_u_dv_ds'] ),
-    1/epsilon*matrices['BoundaryGramian_box']*ones_vector
-    )
-
-ax_v.tricontourf( Th, v )
 
 show()

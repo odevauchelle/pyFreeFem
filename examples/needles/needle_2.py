@@ -21,6 +21,7 @@ Th = pyff.TriMesh( *array( box_points + wire_points ).T )
 # Th.add_boundary_edges( [ len( box_points ) ] + list( arange( len( box_points ) ) ) + [ len( box_points ) ] , 'box' )
 Th.add_boundary_edges( range( len( box_points ) ) , 'box' )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
+# Th.add_boundary_edges( where( Th.y == 0 ), 'bottom' )
 
 
 #########################
@@ -32,7 +33,7 @@ Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_p
 ax_mesh = gca()
 
 Th.plot_triangles( color = 'grey', labels = 'index', ax = ax_mesh )
-Th.plot_boundaries(ax = ax_mesh)
+Th.plot_boundaries( ax = ax_mesh )
 Th.plot_nodes( color = 'grey', labels = 'index' , ax = ax_mesh )
 
 legend(loc = 'upper center')
@@ -165,8 +166,8 @@ print( Q[wire_indexes] )
 kappa = 10
 
 v = spsolve(
-    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + Q_mat - kappa*matrices['wire_u_dv_ds'] ),
-    1/epsilon*matrices['BoundaryGramian_box']*ones_vector
+    matrices['stiffness'] + matrices['BoundaryGramian_box'] + 1/epsilon*( Q_mat - kappa*matrices['wire_u_dv_ds'] ),
+    matrices['BoundaryGramian_box']*ones_vector
     )
 
 ax_v.tricontourf( Th, v )

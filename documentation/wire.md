@@ -43,7 +43,7 @@ show()
 To create the finite-elements matrices, we first need to import the mesh in a pyFreeFem script, and create the associated P1 element space:
 
 ```python
-script = pyff.InputScript( Th = Th )
+script = pyff.InputScript( Th = 'mesh' )
 script += pyff.edpScript('fespace Vh( Th, P1 );')
 ```
 
@@ -74,7 +74,7 @@ Finally, we compute the matrices:
 
 ```python
 script += pyff.VarfScript( **variational_forms )
-matrices = script.get_output()
+matrices = script.get_output( Th = Th )
 ```
 
 ## A look at the matrices
@@ -102,13 +102,13 @@ As a warm-up, we can assume that the wire is a perfect conductor (absorbing boun
 We further assume that the bottom line (which we haven't defined as a boundary) is reflective. Altogether, the weak formulation of our problem reads ($\hat{v}$ is the test function):
 
 $$
-\iint \nabla \hat{v} \cdot \nabla v + \dfrac{1}{\epsilon} \int_{ \mathrm{box} \cup \mathrm{wire} } \hat{v} v - \dfrac{1}{\epsilon} \int_{\mathrm{box}} \hat{v}
+\iint \nabla \hat{v} \cdot \nabla v + \dfrac{1}{\epsilon} \int_{ \mathrm{box} \cup \mathrm{wire} } \hat{v} v - \dfrac{1}{\epsilon} \int_{\mathrm{box}} \hat{v} = 0
 $$
 
 where the reflective boundary does not appear. In matrix form, the above problem reads
 
 $$
-\left( \mathbf{S} + \dfrac{1}{\epsilon} \left( \mathbf{G}_{\mathrm{box}} + \mathbf{G}_{\mathrm{wire}} \right) \right) \cdot V = \dfrac{1}{\epsilon} \mathbf{G}_{\mathrm{box}} \cdot \mathbb{1} = 0
+\left( \mathbf{S} + \dfrac{1}{\epsilon} \left( \mathbf{G}_{\mathrm{box}} + \mathbf{G}_{\mathrm{wire}} \right) \right) \cdot V = \dfrac{1}{\epsilon} \mathbf{G}_{\mathrm{box}} \cdot \mathbb{1}
 $$
 
 We can use `spsolve` to solve this linear problem:
@@ -122,7 +122,7 @@ ones_vector = Th.x*0 + 1.
 
 v = spsolve(
     matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] ),
-    matrices['BoundaryGramian_box']*ones_vector
+    1/epsilon*matrices['BoundaryGramian_box']*ones_vector
     )
 ```
 
