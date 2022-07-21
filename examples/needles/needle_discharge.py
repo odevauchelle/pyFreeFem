@@ -1,6 +1,6 @@
-
 import sys
 sys.path.append('./../../')
+
 
 from pylab import *
 import pyFreeFem as pyff
@@ -12,7 +12,7 @@ import pyFreeFem as pyff
 #########################
 
 box_points = [ [ .5, 0 ], [.5,1], [-.5,1], [-.5,0] ]
-wire_points = [ [0,0],[0,.3],[.1,.6] ]
+wire_points = [ [0,0],[0,.3],[.1,.6],[.15,.7] ]
 
 # plot( *array(box_points).T, 'o', color = 'grey')
 # plot( *array(wire_points).T, 'o', color = 'grey')
@@ -64,9 +64,9 @@ name_to_index, index_to_name = Th.get_boundary_label_conversion()
 for name, index in name_to_index.items() :
     variational_forms.update( { 'BoundaryGramian_' + name : 'int1d(Th,' + str(index) + ')( u*v )' } )
 
-variational_forms['wire_u_dv_ds'] = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( - v*N.x*dy(u) + v*N.y*dx(u) )'
-
-print(variational_forms)
+# print(variational_forms)
+# variational_forms['wire_u_dv_ds'] = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( - v*N.x*dy(u) + v*N.y*dx(u) )'
+variational_forms['wire_u_dv_ds'] = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( u*N.x*dy(v) - u*N.y*dx(v) )'
 
 script += pyff.VarfScript( **variational_forms )
 
@@ -98,7 +98,7 @@ from scipy.sparse.linalg import spsolve
 
 epsilon = 1e-6
 
-for _ in range(2) :
+for _ in range(1) :
 
     try :
         Th = pyff.adaptmesh( Th, v, iso = 1 )
@@ -138,24 +138,58 @@ ax_v.set_yticks([])
 #
 #########################
 
+# we first need to build a P0 x P1 stiffness matrix
+
+script = pyff.InputScript( Th = Th )
+script += pyff.edpScript('''
+fespace Vh0( Th, P0 );
+fespace Vh1( Th, P1 );
+''')
+
+variational_forms = dict( h_dn_v = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( u*N.x*dx(v) + u*N.y*dy(v) )' )
+
+script += pyff.VarfScript( **variational_forms, fespaces = ('Vh0', 'Vh1') ) # u needs to be Vh0, and v to Vh1
+
+matrices.update( script.get_output() )
+
+# we then build a P1 x P0 Heaviside matrix
+
 from scipy.sparse import lil_matrix
 
-wire_Heaviside = lil_matrix( shape( matrices['stiffness'] ) )
+wire_Heaviside = lil_matrix( shape( matrices['h_dn_v'] )[::-1] )
 
-wire_indexes = Th.get_boundaries()['wire'][0]
-wire_indexes = wire_indexes[::-1]
 
-for i in range( len( wire_indexes ) ) :
-    for j in range( i + 1 ) :
-        wire_Heaviside[ wire_indexes[i], wire_indexes[j] ] = 1
+print(shape(matrices['h_dn_v']))
+nodes_indices, tri_indices = matrices['h_dn_v'].nonzero()
+
+print('active triangles', set(tri_indices))
+print('active nodes', set(nodes_indices))
+
+
+node_indices = Th.get_boundaries()['wire'][0] # This is dangerous, as ordering can be messed up. We should keep track of the wire independently from Th.
+node_indices = node_indices[::-1] # start from tip
+
+triangle_indices = []
+
+for i in range( 1, len( node_indices ) ) :
+
+    # identify the two triangles which share edge ( i-1, i )
+
+    edge = node_indices[i-1], node_indices[i]
+
+    for edge in ( edge, edge[::-1] ) :
+        triangle_indices += [ pyff.find_triangle_index( Th.triangles, *edge ) ]
+
+    wire_Heaviside[ triangle_indices, node_indices[i] ] = 1
 
 # print(wire_Heaviside.toarray())
 
-Q_mat = -wire_Heaviside*matrices['stiffness']
+Q_mat = - matrices['h_dn_v']*wire_Heaviside
+Q_mat = Q_mat.transpose()
 
 Q = Q_mat*v
 # ax_v.tricontourf( Th, Q )
-print( Q[wire_indexes] )
+# print( Q[node_indices] )
 
 #########################
 #
@@ -166,10 +200,11 @@ print( Q[wire_indexes] )
 kappa = 100
 
 v = spsolve(
-    matrices['stiffness'] + matrices['BoundaryGramian_box'] + 1/epsilon*( Q_mat - kappa*matrices['wire_u_dv_ds'] + matrices['BoundaryGramian_bottom'] ),
-    matrices['BoundaryGramian_box']*ones_vector
+    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_bottom'] + Q_mat - kappa*matrices['wire_u_dv_ds'] ),
+    1/epsilon*matrices['BoundaryGramian_box']*ones_vector
     )
 
 ax_v.tricontourf( Th, v )
+
 
 show()
