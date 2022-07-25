@@ -22,7 +22,7 @@ wire_points = list( array( [ y_wire*0, y_wire ] ).T )
 Th = pyff.TriMesh( *array( box_points + wire_points ).T )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
 
-for _ in range(4) :
+for _ in range(10) :
 
     try :
         Th = pyff.adaptmesh( Th, v, iso = 1 )
@@ -31,7 +31,7 @@ for _ in range(4) :
 
 
     z = Th.x + 1j*Th.y
-    v = real( sqrt( -1j*( z - 1j*y_wire[-1] ) ) ) + Th.x
+    v = real( sqrt( -1j*( z - 1j*y_wire[-1] ) ) ) - Th.x
 
 
 #########################
@@ -60,26 +60,12 @@ ax_mesh.set_yticks([])
 #
 #########################
 
+from scipy.sparse.linalg import spsolve
 
-script = pyff.InputScript( Th = Th )
-script += pyff.edpScript('''
-fespace Vh0( Th, P0 );
-fespace Vh1( Th, P1 );
+matrices = pyff.gradient_matrices( Th )
 
-Vh0 area;
-varf varea (unused, v) = int2d(Th)(v);
-area[] = varea(0, Vh0);
-''')
-
-variational_forms = dict( dxv = 'int2d(Th)( u*dx(v) )', dyv = 'int2d(Th)( u*dy(v) )' )
-
-script += pyff.VarfScript( **variational_forms, fespaces = ('Vh0', 'Vh1') )
-script += pyff.OutputScript( area = 'vector' )
-
-matrices = script.get_output()
-
-dxv = v*matrices['dxv']/matrices['area']
-dyv = v*matrices['dyv']/matrices['area']
+dxv = matrices['grad_x']*v
+dyv = matrices['grad_y']*v
 
 x = []
 y = []
@@ -97,36 +83,11 @@ ax_mesh.quiver( x, y, -dxv, -dyv )
 #
 ####################################
 
-name_to_index, index_to_name = Th.get_boundary_label_conversion()
+boundary_nodes = Th.get_boundaries()['wire'][0] # This is dangerous, as ordering can be messed up. We should keep track of the wire independently from Th.
+boundary_nodes = boundary_nodes[::-1] # start from tip
 
-from scipy.sparse import lil_matrix
-
-flux = lil_matrix( shape( matrices['dxv'] )[::-1], dtype=np.cfloat )
-
-node_indices = Th.get_boundaries()['wire'][0] # This is dangerous, as ordering can be messed up. We should keep track of the wire independently from Th.
-node_indices = node_indices[::-1] # start from tip
-
-for i in range( 1, len( node_indices ) ) :
-
-    # identify the two triangles which share edge ( i-1, i )
-
-    edge = [ node_indices[i-1], node_indices[i] ]
-    dz = diff( Th.x[edge] + 1j*Th.y[edge] )[0]
-
-    the_sign = -1
-
-    for edge in ( edge, edge[::-1] ) : # two triangles per edge !
-        triangle_index = pyff.find_triangle_index( Th.triangles, *edge )
-        flux[ triangle_index, node_indices[i] ] = the_sign*dz/matrices['area'][triangle_index]
-        the_sign *= -1
-
-q_mat = matrices['dxv']*imag( flux ) - matrices['dyv']*real(flux)
-# print(shape(flux))
-
-q = v*q_mat
-q = q[ node_indices ]
-Q = cumsum(q)
-
+Q_mat = pyff.needle_discharge( Th, boundary_nodes )
+Q = Q_mat*v
 
 ##########################
 #
@@ -138,12 +99,12 @@ figure()
 
 ax_q = gca()
 
-y = Th.y[ node_indices ]
+y = Th.y[ boundary_nodes ]
 
 y_th = linspace( min(y), max(y), 150 )
 r = abs( y_th - y_th[-1] )
 
-ax_q.plot( y, Q, '.')
+ax_q.plot( y, Q[boundary_nodes], '.')
 
 ax_q.plot( y_th, 2*sqrt(r),'-')
 

@@ -1,6 +1,8 @@
-from pylab import savetxt, array
+from pylab import savetxt, array, shape, diff, real, imag, triu
 from numpy import ndarray
 from scipy.sparse.linalg import spsolve
+from scipy.sparse import lil_matrix
+
 
 import sys
 sys.path.append('./../')
@@ -184,3 +186,93 @@ def get_projector( Th, P_in, P_out ):
     GramianIO = output['GramianIO']
 
     return spsolve( GramianOO, GramianIO )
+
+def gradient_matrices( Th ) :
+    
+    '''
+    Compute the P1 to P0 gradient matrices, and the areas of the mesh triangles.
+
+    matrices = gradient_matrices( Th )
+
+    matrices.keys() : ['grad_x', 'grad_y', 'area']
+
+    dxv = matrices['grad_x']*v
+    dyv = matrices['grad_y']*v
+    '''
+
+    script = InputScript( Th = Th )
+
+    script += edpScript('''
+    fespace Vh0( Th, P0 );
+    fespace Vh1( Th, P1 );
+    ''')
+
+    script += VarfScript( grad_x = 'int2d(Th)( u*dx(v) )', grad_y = 'int2d(Th)( u*dy(v) )', fespaces = ('Vh0', 'Vh1') )
+    script += VarfScript( area = 'int2d(Th)( u*v )', fespaces = ('Vh0', 'Vh0') )
+
+    matrices = script.get_output()
+
+    matrices['grad_x'] = spsolve( matrices['area'], matrices['grad_x'].T )
+    matrices['grad_y'] = spsolve( matrices['area'], matrices['grad_y'].T )
+
+    return matrices
+
+
+def flux_along_needle( Th, boundary_nodes ) :
+    '''
+    Compute the ( P0, P0 ) matrix associated to the flux through both sides of a wire.
+
+    q_mat = pyff.flux_along_needle( Th, boundary_nodes )
+
+    Usage:
+    q = q_mat*v
+    q = q[ boundary_nodes ]
+    Q = cumsum(q)
+    '''
+    matrices = gradient_matrices( Th )
+
+    name_to_index, index_to_name = Th.get_boundary_label_conversion()
+
+    flux = lil_matrix( shape( matrices['grad_x'] ), dtype=np.cfloat ).T
+
+    for i in range( 1, len( boundary_nodes ) ) :
+
+        # identify the two triangles which share edge ( i-1, i )
+
+        edge = [ boundary_nodes[i-1], boundary_nodes[i] ]
+        dz = diff( Th.x[edge] + 1j*Th.y[edge] )[0]
+
+        the_sign = -1
+
+        for edge in ( edge, edge[::-1] ) : # two triangles per edge !
+            triangle_index = find_triangle_index( Th.triangles, *edge )
+            flux[ boundary_nodes[i], triangle_index ] = the_sign*dz
+            the_sign *= -1 # different sign for each side of the edge
+
+    return imag( flux ).dot( matrices['grad_x'] ) - real(flux).dot( matrices['grad_y'] )
+
+
+def integral_along_needle( Th, boundary_nodes ) :
+    '''
+    Sum P0 contributions along needle.
+
+    cumsum_needle = integral_along_needle( Th, boundary_nodes )
+    '''
+
+    cumsum_needle = lil_matrix( triu( [1.]*len(boundary_nodes) ).T )
+    boundary_to_Vh = lil_matrix( ( len(Th.x), len(boundary_nodes) ) )
+
+    for j, i in enumerate( boundary_nodes ) :
+        boundary_to_Vh[ i, j ] = 1
+
+    return boundary_to_Vh.dot( cumsum_needle.dot( boundary_to_Vh.T ) )
+
+
+def needle_discharge( Th, boundary_nodes ) :
+    '''
+    Convenience function to compute the matrix associated to the discharge along a needle.
+
+    Q_mat = needle_discharge( Th, boundary_nodes )
+    '''
+
+    return integral_along_needle( Th, boundary_nodes ).dot( flux_along_needle( Th, boundary_nodes ) )
