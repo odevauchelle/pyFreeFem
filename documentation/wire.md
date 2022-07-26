@@ -162,7 +162,7 @@ $$
 where $\kappa$ is the conductivity of the wire. The discharge $Q$ at each point along the needle is
 
 $$
-Q(s) = \int_{s^* < s} \left[ \partial_n v \right] \, \mathrm{d} s^*
+Q(s) = \int_{ \sigma < s} \left[ \partial_n v \right] \, \mathrm{d} \sigma
 $$
 
 where $s$ is the arclength coordinate along the needle ($s=0$ at the tip), and the brackets stand for the jump across the needle.
