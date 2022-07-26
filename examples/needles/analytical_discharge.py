@@ -13,24 +13,53 @@ import pyFreeFem as pyff
 
 box_points = [ [ .5, 0 ], [.5,1], [-.5,1], [-.5,0] ]
 
-y_wire = linspace(0,.5,30)
+y_wire = linspace(0,.5,3)
 
 wire_points = list( array( [ y_wire*0, y_wire ] ).T )
+# wire_points = wire_points[::-1][1:] + wire_points
+
 
 Th = pyff.TriMesh( *array( box_points + wire_points ).T )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
 
-for _ in range(5) :
+fig_domain = figure()
+ax_domain = gca()
+Th.plot_triangles( ax = ax_domain, lw = .7, color = 'grey' )
+Th.plot_boundaries( ax = ax_domain )
+
+ax_domain.axis('scaled')
+ax_domain.axis('off')
+ax_domain.set_xticks([])
+ax_domain.set_yticks([])
+ax_domain.legend()
+
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_mesh.svg' , bbox_inches = 'tight' )
+
+#########################
+#
+# field
+#
+#########################
+
+def field( Th, a = 0 ) :
+    z = Th.x + 1j*Th.y
+    return real( sqrt( -1j*( z - 1j*y_wire[-1] ) ) - a*z )
+
+
+#########################
+#
+# refine the mesh
+#
+#########################
+
+for _ in range(3) :
 
     try :
         Th = pyff.adaptmesh( Th, v, iso = 1 )
     except :
         pass
 
-
-    z = Th.x + 1j*Th.y
-    v = real( sqrt( -1j*( z - 1j*y_wire[-1] ) ) ) - Th.x
-
+    v = field( Th )
 
 #########################
 #
@@ -38,79 +67,134 @@ for _ in range(5) :
 #
 #########################
 
-ax_mesh = gca()
+a_list = [0, 1, 1j]
 
-tricontourf( Th, v )
+fig_v, axs = subplots( ncols = len( a_list ), figsize = array( [ len( a_list ), 1.1 ] )*3 )
 
-Th.plot_triangles( ax = ax_mesh, lw = 1, color = 'w', alpha = .2 )
-Th.plot_boundaries( ax = ax_mesh )
+for i, a in enumerate(a_list) :
+
+    ax = axs[i]
+
+    ax.tricontourf( Th, field( Th, a ) )
+
+    Th.plot_triangles( ax = ax, lw = .7, color = 'w', alpha = .2 )
+    Th.plot_boundaries( ax = ax )
+
+    ax.axis('scaled')
+    ax.axis('off')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title( r'$a=$' + str(a) )
 
 legend(loc = 'upper center')
 
-ax_mesh.axis('scaled')
-ax_mesh.axis('off')
-ax_mesh.set_xticks([])
-ax_mesh.set_yticks([])
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_field.svg' , bbox_inches = 'tight' )
 
-#########################
-#
-# Current in wire
-#
-#########################
 
-# we first need to build a P0 x P1 stiffness matrix
+########################
+#
+# Failure of int1d
+#
+########################
 
 name_to_index, index_to_name = Th.get_boundary_label_conversion()
 
-
 script = pyff.InputScript( Th = Th )
-script += pyff.edpScript('''
-fespace Vh0( Th, P0 );
-fespace Vh1( Th, P1 );
-''')
+script += 'fespace Vh(Th,P1);'
+script += pyff.InputScript( v = 'vector' )
+script += 'real Q = int1d( Th,' + str( name_to_index['wire'] ) + ' )( N.x*dx(v) + N.y*dy(v) );'
+script += pyff.OutputScript( Q = 'real' )
 
-variational_forms = dict( h_dn_v = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( u*N.x*dx(v) + u*N.y*dy(v) )' )
-
-script += pyff.VarfScript( **variational_forms, fespaces = ('Vh0', 'Vh1') ) # u needs to be Vh0, and v to Vh1
-
-matrices = script.get_output()
-
-# we then build a P1 x P0 Heaviside matrix
-
-from scipy.sparse import lil_matrix
-
-wire_Heaviside = lil_matrix( shape( matrices['h_dn_v'] )[::-1] )
+for i, a in enumerate(a_list) :
+    print( 'a=', a, script.get_output( v = field( Th, a ) ) )
 
 
-print(shape(matrices['h_dn_v']))
-nodes_indices, tri_indices = matrices['h_dn_v'].nonzero()
+#########################
+#
+# Gradient
+#
+#########################
 
-print('active triangles', set(tri_indices))
-print('active nodes', set(nodes_indices))
+matrices = pyff.gradient_matrices( Th )
+
+dxv = matrices['grad_x']*v
+dyv = matrices['grad_y']*v
+
+print( 'v', len(Th.x), len(v) )
+print( 'dxv', len(Th.triangles), len(dxv) )
+
+figure()
+ax_grad = gca()
+
+X = []
+
+for i, triangle in enumerate( Th.triangles ) :
+
+    X += [ [ mean( Th.x[triangle] ), mean( Th.y[triangle] ) ]  ]
 
 
-node_indices = Th.get_boundaries()['wire'][0] # This is dangerous, as ordering can be messed up. We should keep track of the wire independently from Th.
-node_indices = node_indices[::-1] # start from tip
+ax = ax_grad
+ax.tricontourf( Th, field( Th, a ) )
+Th.plot_triangles( ax = ax, lw = .7, color = 'w', alpha = .2 )
+Th.plot_boundaries( ax = ax )
 
-triangle_indices = []
+ax.quiver( *array(X).T, -dxv, -dyv )
 
-for i in range( 1, len( node_indices ) ) :
+ax.axis('scaled')
+ax.axis('off')
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_title( r'$a=$' + str(a) )
 
-    # identify the two triangles which share edge ( i-1, i )
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_gradient.svg' , bbox_inches = 'tight' )
 
-    edge = node_indices[i-1], node_indices[i]
+#######################
+#
+# Flux along wire
+#
+######################
 
-    for edge in ( edge, edge[::-1] ) :
-        triangle_indices += [ pyff.find_triangle_index( Th.triangles, *edge ) ]
+boundary_nodes = Th.get_boundaries()['wire'][0] # This is dangerous, as ordering can be messed up. We should keep track of the wire independently from Th.
+boundary_nodes = boundary_nodes[::-1] # start from tip
 
-    wire_Heaviside[ triangle_indices, node_indices[i] ] = 1
+q_mat = pyff.flux_along_needle( Th, boundary_nodes )
 
-# print(wire_Heaviside.toarray())
+print( shape(q_mat) )
 
-Q_mat = - matrices['h_dn_v']*wire_Heaviside
-Q_mat = Q_mat.transpose()
+figure()
 
-Q = Q_mat*v
+ax_q = gca()
+
+y = Th.y[boundary_nodes]
+
+ms = 15
+
+for a in a_list:
+    qds = q_mat.dot( field( Th, a ) )
+    q = -qds[boundary_nodes][1:]/diff(y)
+
+    ax_q.plot( y[1:], q, '.', ms = ms, label = '$a=$' + str(a) )
+    ms *= .7
+
+y_th = linspace( 0 , .5, 100 )
+ax_q.plot( y_th, 1/sqrt( .5 - y_th ), color = 'grey', zorder = -1, label = 'exact' )
+
+
+ax_q.legend()
+ax_q.set_xlabel('$y$')
+ax_q.set_ylabel('Flux into wire $q$')
+
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_q.svg' , bbox_inches = 'tight' )
+
+####################################
+#
+# dicharge along wire
+#
+####################################
+
+print('Q=', sum(qds) )
+
+Q_mat = pyff.needle_discharge( Th, boundary_nodes )
 
 ##########################
 #
@@ -119,16 +203,17 @@ Q = Q_mat*v
 ##########################
 
 figure()
-ax_q = gca()
 
-y = Th.y[ node_indices ]
+ax_Q = gca()
 
-y_th = linspace( min(y), max(y), 150 )
-r = abs( y_th - y_th[-1] )
+ax_Q.plot( y, Q_mat.dot( field( Th, 0 ) )[boundary_nodes], '.')
+ax_Q.plot( y_th, 2*sqrt(y_th[-1] - y_th), color = 'grey', label = 'exact' )
 
-ax_q.plot( y, Q[ node_indices ], '.')
+ax_Q.set_xlabel('$y$')
+ax_Q.set_ylabel('Discharge $Q$')
 
-ax_q.plot( y_th, sqrt(r),'-')
+ax_Q.legend()
+# savefig( '../../figures/' + __file__.split('/')[-1].split('.')[0] + '_Q.svg' , bbox_inches = 'tight' )
 
 
 show()

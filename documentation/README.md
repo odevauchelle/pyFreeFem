@@ -165,3 +165,7 @@ Here is the result:
 - Compute [travel times](./travel_time.md) along stream lines
 
 - [Visous flow](./Poisson_in_wedge.md) in a sharp-cornered channel
+
+- Find the [discharge through a wire](./discharge_through_wire.md)
+
+- Compute the electric potential around a wire of [finite resistivity](./wire.md)
