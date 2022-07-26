@@ -35,7 +35,7 @@ legend()
 
 Let us define a field $v$ around this needle. For instance:
 
-$$ v = \mathrm{Re} \left( \sqrt( -i*( z - z_{\mathrm{tip}} ) ) + a z \right)  $$
+$$ v = \mathrm{Re} \left( \sqrt{ -i ( z - z_{\mathrm{tip}} ) } + a z \right)  $$
 
 where $z$ is the complex coordinate $x+iy$.
 
@@ -82,13 +82,13 @@ for i, a in enumerate(a_list) :
 The discharge $Q$ at each point along the needle is
 
 $$
-Q(s) = \int_{\tilde{s}<s} \left[ \partial_n v ] \, \mathrm{d} \tilde{s}
+Q(s) = \int_{\tilde{s}<s} \left[ \partial_n v \right] \, \mathrm{d} \tilde{s}
 $$
 
 where $s$ is the arclength coordinate along the needle ($s=0$ at the tip), and the brackets stand for the jump across the needle. In our case,
 
 $$
-Q(s) = 2\sqrt(s)
+Q(s) = 2\sqrt{s}
 $$
 
 regardless of the constant $a$. Indeed, we can add any field that's continuous across the needle without changing the discharge $Q$. In particular, the total discharge through the needle is

@@ -11,15 +11,16 @@ from pylab import *
 import pyFreeFem as pyff
 
 box_points = [ [ .5, 0 ], [.5,1], [-.5,1], [-.5,0] ]
-wire_points = [ [0,0],[0,.2],[.1,.4] ]
+wire_points = [ [-.1,0], [-.1,.6] ]
 ```
 
 We then build the mesh, and define the two boundaries.
 
 ```python
 Th = pyff.TriMesh( *array( box_points + wire_points ).T )
-Th.add_boundary_edges( range( len( box_points ) ) , 'box' )
+Th.add_boundary_edges( range( len( box_points ) )[1:-1] , 'box' )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
+Th.add_boundary_edges( [3,4,0], 'bottom' )
 ```
 
 Here is the result:
@@ -115,15 +116,25 @@ We can use `spsolve` to solve this linear problem:
 
 
 ```python
+
 from scipy.sparse.linalg import spsolve
 
 epsilon = 1e-6
-ones_vector = Th.x*0 + 1.
 
-v = spsolve(
-    matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] ),
-    1/epsilon*matrices['BoundaryGramian_box']*ones_vector
-    )
+for _ in range(4) :
+
+    try :
+        Th = pyff.adaptmesh( Th, v, err = 3e-3 )
+        matrices = script.get_output( Th = Th )
+    except :
+        pass
+
+    ones_vector = Th.x*0 + 1.
+
+    v = spsolve(
+        matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_wire'] + matrices['BoundaryGramian_bottom']),
+        1/epsilon*matrices['BoundaryGramian_box']*ones_vector
+        )
 ```
 
 Here is how the result looks like
@@ -139,3 +150,93 @@ Th.plot_triangles(ax = ax_v, color = 'w', alpha = .3 )
 ```
 
 !['Absorbing boundary'](../figures/wire_field.svg)
+
+## Finite-conductivity wire
+
+We now consider a slightly more complicated case: that of a wire that's not totally absorbing. The discharge through the wire, $Q$, is proportional to the field's gradient along the wire:
+
+$$
+Q = - \kappa \partial_s v
+$$
+
+where $\kappa$ is the conductivity of the wire. The discharge $Q$ at each point along the needle is
+
+$$
+Q(s) = \int_{\tilde{s}<s} \left[ \partial_n v \right] \, \mathrm{d} \tilde{s}
+$$
+
+where $s$ is the arclength coordinate along the needle ($s=0$ at the tip), and the brackets stand for the jump across the needle.
+
+
+### Boundary condition
+
+As usual with finite elements, we implement this new boundary condition as a flux condition along the wire:
+
+$$
+\epsilon \partial_n v = Q + \kappa \partial_s v
+$$
+
+This expression requires two new matrices, one for $Q$ and the other for $\partial_s v$.
+
+The weak form of this boundary condition reads
+
+$$
+\int_{ \mathrm{wire} } \hat{v} \partial_n v = \dfrac{1}{\epsilon} \int_{ \mathrm{wire} } \hat{v} ( Q + \kappa \partial_s v )
+$$
+
+which we now substitute for the absorbing boundary condition along the wire.
+
+### Discharge matrix
+
+The function `needle_discharge` allows us to calculate the discharge matrix, as explained [here](./discharge_through_wire.md):
+
+```python
+Q_mat = pyff.needle_discharge( Th, boundary_nodes )
+```
+
+### Gradient along wire
+
+To caculate the finite-element matrix associated to $\partial_s v$, we simply use the usual method:
+
+```python
+script += pyff.VarfScript( wire_u_dv_ds = 'int1d(Th,' + str( name_to_index['wire'] ) + ')( v*N.x*dy(u) - v*N.y*dx(u) )' )
+matrices = script.get_output( Th = Th )
+```
+
+In the above lines, `u` plays the role of $v$, while `v` is the test function. This unfortunate notation is the default in pyFreeFem; it does not mater later on.
+
+### Full problem
+
+We're now ready to write, and solve, the entire problem.
+
+```python
+kappa_list = logspace( -1, 1, 3  )
+
+fig_fc, axs = subplots( ncols = len(kappa_list), figsize = array([len(kappa_list),1])*3 )
+
+for i, kappa in enumerate( kappa_list ) :
+
+    ax = axs[i]
+
+    v = spsolve(
+        matrices['stiffness'] + 1/epsilon*( matrices['BoundaryGramian_box'] + matrices['BoundaryGramian_bottom'] + matrices['BoundaryGramian_wire'].dot(Q_mat) - kappa*matrices['wire_u_dv_ds'] ),
+        1/epsilon*matrices['BoundaryGramian_box']*ones_vector
+        )
+
+    ax.tricontourf( Th, v )
+```
+
+!['Finite conductivity'](../figures/wire_kappa.svg)
+
+As expected, when $\kappa$ is large, the wire behaves like an absorbing boundary.
+
+We can plot the discharge $Q$ along the wire as follows:
+
+```python
+y = Th.y[boundary_nodes]
+Q = Q_mat.dot(v)[boundary_nodes]
+
+plot( y, Q)
+```
+
+!['Discharge'](../figures/wire_Q.svg)
