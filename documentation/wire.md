@@ -203,7 +203,7 @@ script += pyff.VarfScript( wire_u_dv_ds = 'int1d(Th,' + str( name_to_index['wire
 matrices = script.get_output( Th = Th )
 ```
 
-In the above lines, `u` plays the role of $v$, while `v` is the test function. This unfortunate notation is the default in pyFreeFem; it does not mater later on.
+In the above lines, `u` plays the role of $v$, while `v` is the test function, that is, $\hat{v}$. This unfortunate notation is the default in pyFreeFem; it does not mater later on.
 
 ### Full problem
 

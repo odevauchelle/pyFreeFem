@@ -82,7 +82,7 @@ for i, a in enumerate(a_list) :
 The discharge $Q$ at each point along the needle is
 
 $$
-Q(s) = \int_{\sigma<s} \left[ \partial_n v \right] \, \mathrm{d} \sigma
+Q(s) = \int_{ \sigma < s} \left[ \partial_n v \right] \, \mathrm{d} \sigma
 $$
 
 where $s$ is the arclength coordinate along the needle ($s=0$ at the tip), and the brackets stand for the jump across the needle. In our case,
