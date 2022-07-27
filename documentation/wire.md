@@ -94,11 +94,11 @@ for i, ( name, mat ) in enumerate( matrices.items() ) :
 
 !['Matrices'](../figures/wire_matrices.svg)
 
-The third matrix is the Gramian along the wire. As expected, its only non-zero coefficients are those which involve nodes 4, 5 and 6.
+The third matrix is the Gramian along the wire. As expected, its only non-zero coefficients are those which involve nodes 4 and 5.
 
 ## Absorbing boundary condition
 
-As a warm-up, we can assume that the wire is a perfect conductor (absorbing boundary), and solve the Laplace equation around it. Let's call the potential $v$, and assume that it is 1 on the box, and 0 along the wire. These conditions translate into $v-1=\epsilon \partial_n v$ on the box, and $v=\epsilon \partial_n v$ on the wire.
+As a warm-up, we can assume that the wire is a perfect conductor (absorbing boundary), and solve the Laplace equation around it. Let's call the potential $v$, and assume that it is 1 on the box, and 0 along the wire. These conditions translate into $v-1=\epsilon \partial_n v$ on the box, and $v=\epsilon \partial_n v$ on the wire. ($\epsilon$ is a small number.)
 
 We further assume that the bottom line (which we haven't defined as a boundary) is reflective. Altogether, the weak formulation of our problem reads ($\hat{v}$ is the test function):
 

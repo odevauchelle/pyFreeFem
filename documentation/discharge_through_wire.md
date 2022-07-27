@@ -1,6 +1,6 @@
 # Discharge through a wire
 
-We want to calculate the discharge of some field through a wire, that is, a boundary that ends in the domain over which the field is defined.
+We want to calculate the discharge of some field through a wire, that is, a boundary that ends in the domain over which the field is defined. To do this, we will create a mesh with a needle boundary, and define an analytical field around the needle. This will be our test case.
 
 ## Initial mesh
 
@@ -180,7 +180,7 @@ print( shape(q_mat) )
 ```console
 (424, 424)
 ```
-The matrix `q_mat` maps a P1 field onto another P1 field, which vanishes everywhere but along the wire, where it represents $q\mathrm{d}s$ ($q=[\partial_n v]$).
+The matrix `q_mat` maps a P1 field onto another P1 field, which vanishes everywhere but along the wire, where it represents $q\mathrm{d}s$ (width $q=[\partial_n v]$).
 
 We can compare the result to the theoretical value:
 
