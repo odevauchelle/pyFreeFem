@@ -1,4 +1,4 @@
-# Flow in a free-surface aquifer
+# Steady flow in a free-surface aquifer
 
 We want to compute the two-dimensional Darcy flow in an unconfined aquifer. The problem features a free boundary, where both the pressure and the stream function are known, but the location of which is unknown a priori.
 
@@ -24,7 +24,7 @@ $$
 
 under the water table. We define the analytical function $\Phi=\phi + i \psi$, where $\psi$ is the stream function associated to this Darcy flow.
 
-The boundary conditions are:
+The boundary conditions are (figure below):
 
 - On the bottom, $y = -H$ and $\psi=0$
 - On the divide, $x = 1$ and $\psi=0$
@@ -34,4 +34,18 @@ The boundary conditions are:
 
 where $R$ is the recharge (rainfall) rate.
 
-![Boundaries](../figures/aquifer_boundaries.svg)
+![Boundaries in physical plane](../figures/aquifer_boundaries.svg)
+
+## Conformal mapping
+
+We define the Zhukovsky map $f$:
+
+$$
+\omega = z - i \phi
+$$
+
+The figure below shows our aquifer in the mapped space. The boundary conditions remain unchanged. We will solve the Laplace equation in this mathematical space.
+
+![Boundaries in physical plane](../figures/aquifer_boundaries_mathematical_plane.svg)
+
+There is still a free boundary in this problem: the bottom's location is unknown in the mathematical plane. This, however, is still progress, because this free boundary is far from the outlet's singularity, and because it turns into a horizontal line when the rainfall rate vanishes ($R=0$).
