@@ -30,6 +30,9 @@ ax.set_ylabel('$v$')
 
 ax.text( .5, mean( imag(boundaries['bottom'])), '$\omega=u+iv$\n', ha = 'center', va = 'bottom' )
 
+ax.plot( Q, 0, 'ok', color = st.boundary['free_surface']['color'])
+ax.text( Q, 0, '\n$\omega=R$', ha = 'center', va = 'top', color = st.boundary['free_surface']['color'])
+
 ####################
 #
 # Filling
@@ -38,6 +41,6 @@ ax.text( .5, mean( imag(boundaries['bottom'])), '$\omega=u+iv$\n', ha = 'center'
 
 st.fill_in( boundaries, ax )
 
-# savefig('../../figures/aquifer_boundaries_mathematical_plane.svg', bbox_inches = 'tight')
+savefig('../../figures/aquifer_boundaries_mathematical_plane.svg', bbox_inches = 'tight')
 
 show()

@@ -26,7 +26,10 @@ def arrow( x, y, orientation = 'down' ):
 
     return FancyArrowPatch( X_start, X_end, mutation_scale = 25, edgecolor = 'none', alpha = .3, arrowstyle = arrow_style, clip_on = False )
 
-
+flow = dict(
+    iso_head = dict( colors = 'tab:blue', linestyles = ':', alpha = .5 ),
+    flow_lines = dict( colors = 'tab:blue', alpha = .5 )
+    )
 
 boundary = dict(
     free_surface = dict( color = 'tab:blue' ),
@@ -36,17 +39,19 @@ boundary = dict(
     divide = dict( color = 'grey', linestyle = '--')
 )
 
+mesh = dict( lw = .5, color = 'grey', alpha = .2)
+
 
 def plot_boundaries( boundaries, ax = None ) :
 
     if ax is None :
         ax = gca()
 
-
     for name, z in boundaries.items() :
+        z = flatten( array( z ) )
         ax.plot( real(z), imag(z), label = name.replace('_', ' '), **boundary[name] )
 
-    ax.legend()
+    # ax.legend()
     ax.axis('equal')
 
 

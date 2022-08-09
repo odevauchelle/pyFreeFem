@@ -49,3 +49,11 @@ The figure below shows our aquifer in the mapped space. The boundary conditions 
 ![Boundaries in physical plane](../figures/aquifer_boundaries_mathematical_plane.svg)
 
 There is still a free boundary in this problem: the bottom's location is unknown in the mathematical plane. This, however, is still progress, because this free boundary is far from the outlet's singularity, and because it turns into a horizontal line when the rainfall rate vanishes ($R=0$).
+
+## Linearized problem
+
+When the rainfal rate $R$ is small enough, our problem can be linearized. In the mathematical space, this translates into the bottom line remaining at $\mathrm{Im} \omega = - H$. In other words, we let the bottom lie where it is when $R=0$.
+
+This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
+
+### Build the mesh
