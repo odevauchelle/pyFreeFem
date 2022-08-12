@@ -56,7 +56,6 @@ When the rainfal rate $R$ is small enough, our problem can be linearized. In the
 
 This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
 
-
 The complete code for this problem is [here](../examples/free-surface_aquifer/linearized_problem.py).
 
 ### Build the mesh
@@ -270,3 +269,22 @@ To get a better approximation of the flow, we need to relax the small-rainfall a
 ## Relaxation to the non-linear solution
 
 We now return to the orginal problem, for which the location of the bottom in the mathematical plane is unknown.
+
+We propose the following relaxation method:
+
+- Solve the linear problem
+- Note that the conformal map is almost the identity near the river_bottom
+- Deform the mesh in the mathematical plane so that its bottom moves by an amount opposed to the error in the physical plane, that is, $y-H$
+- Repeat and hope for convergence.
+
+The complete code for this problem is [here](../examples/free-surface_aquifer/non-linear_problem.py).
+
+### Error field
+
+We want to deform the mesh in a smooth way. To do so, we can create a field $\delta y$ that satisfy the Laplace equation, with the following condition on the bottom:
+
+$$
+\delta y = y + H
+$$
+
+On the two sides, we can require, for instance, that $\partial \delta y = \delta y$. On the free surface, we need $\delta y$ to vanish.
