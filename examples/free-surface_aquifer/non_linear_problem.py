@@ -60,8 +60,6 @@ for name in Th.get_boundaries().keys() :
 ax_mesh.legend()
 ax_mesh.axis('scaled')
 
-# fig_mesh.savefig('../../figures/free-surface_mesh.svg', bbox_inches = 'tight')
-
 #########################
 #
 # FE matrices
@@ -204,6 +202,6 @@ for space in Th.keys() :
 
 # ax['omega'].legend( loc = 'center' )
 
-# savefig('../../figures/free-surface_field.svg', bbox_inches = 'tight')
+# savefig('../../figures/free-surface_non_linear.svg', bbox_inches = 'tight')
 
 show( block = True )

@@ -56,6 +56,9 @@ When the rainfal rate $R$ is small enough, our problem can be linearized. In the
 
 This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
 
+
+The complete code for this problem is [here](../examples/free-surface_aquifer/linearized_problem.py).
+
 ### Build the mesh
 
 There are of course many ways to build the mesh. Here's an option that favors clarity over terseness. We first define and name the points we need:
@@ -128,7 +131,7 @@ $$
 To get these matrices, we define a pyFreeFem script with the mesh as an input:
 
 ```python
-script = pyff.InputScript( Th = Th )
+script = pyff.InputScript( Th = 'mesh' )
 script += pyff.edpScript('fespace Vh( Th, P1 );')
 
 FE_matrices = dict( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
@@ -140,12 +143,12 @@ for boundary_name in Th.get_boundaries().keys() :
 
 script += pyff.VarfScript( **FE_matrices )
 
-FE_matrices = script.get_output()
+FE_matrices = script.get_output( Th = Th )
 ```
 
 ### Write and solve the problem
 
-We now need to find the physical coordinate $z=x+iy$ as a function of the mathematical coordinate $\omega=u+iv$. Because our mapping from $z$ to $omega$ is conformal, both $x$ and $y$ are analytical functions. This means we need to solve the Laplace equation twice over the mathematical domain.
+We now need to find the physical coordinate $z=x+iy$ as a function of the mathematical coordinate $\omega=u+iv$. Because our mapping from $z$ to $\omega$ is conformal, both $x$ and $y$ are analytical functions. This means we need to solve the Laplace equation twice over the mathematical domain.
 
 The boundary conditions are now expressed in terms of $x$ or $y$. On the bottom, for instance, $y = -H$. This also means that $\partial_n x=0$, by virtue of the Cauchy-Riemann equations. As usual with finite elements, we enforce the first one by requiring
 
@@ -213,3 +216,57 @@ except :
     pass
 ```
 With this, we refine the mesh with respect to $(x-u)(y-v)$.
+
+### Back to physical space
+
+To plot our result in the physical space, we need to create a mesh that shares its connectivity with `Th`, only with its nodes at their physical location.
+
+We do this by creating a deep copy of the original mesh, and then assign the solutions to the Laplace equations, `x` and `y`, to its nodes.
+
+```python
+from copy import deepcopy
+
+Th = dict( omega = Th, z = deepcopy(Th) )
+
+Th['z'].x = x
+Th['z'].y = y
+```
+
+The fields we would like to plot are the real and imaginary parts of $\Phi$, the head field. To get it, it is convenient to use complex numbers:
+
+```python
+omega = Th['omega'].x + 1j*Th['omega'].y
+z = Th['z'].x + 1j*Th['z'].y
+
+Phi = 1j*( omega - z )
+```
+
+We can finally plot $Phi$ in the physical and mathematical planes:
+
+```python
+fig, ax = subplots( ncols = 2, figsize = (8,5) )
+
+ax = dict( zip( list( Th.keys() ), ax ) )
+
+for space in Th.keys() :
+    ax[space].tricontour( Th[space], real(Phi), **st.flow['iso_head'] )
+    ax[space].tricontour( Th[space], imag(Phi), **st.flow['flow_lines'] )
+    Th[space].plot_boundaries( ax = ax[space] )
+    ax[space].axis('scaled')
+
+ax['omega'].legend()
+```
+![Flow field](../figures/free-surface_field.svg)
+
+A minor issue with this method is that the elevation of the origin of the physical mesh is arbitrary. To solve this issue, we simply remove to the mesh's vertical coordinate the elevation of the highest point on the river wall:
+
+```python
+Th['z'].y -= max( Th['z'].y[ Th['z'].get_boundaries()['river_wall'][0] ] )
+```
+As expected, the bottom is not flat in the physical space. It gets flatter, however, as the rainfall rate $R$ approaches zero.
+
+To get a better approximation of the flow, we need to relax the small-rainfall approximation that allowed us to linearize the problem, and return to the original problem.
+
+## Relaxation to the non-linear solution
+
+We now return to the orginal problem, for which the location of the bottom in the mathematical plane is unknown.
