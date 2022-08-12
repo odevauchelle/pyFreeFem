@@ -20,6 +20,9 @@ H = .8
 #
 #########################
 
+fig_mesh = figure()
+ax_mesh = gca()
+
 fig, ax = subplots( ncols = 2, figsize = (8,5) )
 
 fig = dict( z = fig, omega = fig )
@@ -31,54 +34,49 @@ ax = dict( zip( list( fig.keys() ), ax ) )
 #
 #########################
 
-seepage_bottom = ( 0, 0 )
-seepage_top = ( R, 0 )
-divide_top = ( 1, 0 )
-divide_bottom = ( 1, -H  )
-river_bottom = ( 0, divide_bottom[1] )
+points = dict(
+    seepage_bottom = ( 0, 0 ),
+    seepage_top = ( R, 0 ),
+    divide_top = ( 1, 0 ),
+    divide_bottom = ( 1, -H  ),
+    river_bottom = ( 0, -H )
+    )
 
-boundary_names = [ 'free_surface', 'seepage_face',  'river_wall', 'bottom', 'divide' ]
+boundaries = dict(
+    free_surface = [ 'divide_top', 'seepage_top' ],
+    seepage_face = [ 'seepage_top', 'seepage_bottom' ],
+    river_wall = [ 'seepage_bottom', 'river_bottom' ],
+    bottom = [ 'river_bottom', 'divide_bottom' ],
+    divide = [ 'divide_bottom', 'divide_top' ]
+    )
 
-boundaries = dict( zip( boundary_names, [
-    [ divide_top, seepage_top ],
-    [ seepage_top, seepage_bottom ],
-    [ seepage_bottom, river_bottom ],
-    [ river_bottom, divide_bottom ],
-    [ divide_bottom, divide_top ],
-    ] ) )
+Th = pyff.TriMesh( *array( list( points.values() ) ).T )
 
-all_points = []
+for boundary_name, boundary_points in boundaries.items() :
+    Th.add_boundary_edges( [ list( points.keys() ).index( point ) for point in boundary_points ], boundary_name )
+#
+Th = pyff.adaptmesh( Th, 1, iso = 1, hmax = .3 )
 
-for boundary_name in boundary_names :
+Th.plot_triangles( ax = ax_mesh, **st.mesh )
+# Th.plot_boundaries( ax = ax_mesh )
 
-    boundary = boundaries[ boundary_name ]
+for name in Th.get_boundaries().keys() :
+    Th.plot_boundaries( [name], ax = ax_mesh, **st.boundary[name] )
 
-    all_points += boundary[:-1]
+ax_mesh.legend()
+ax_mesh.axis('scaled')
 
-Th = pyff.TriMesh( *array(all_points).T )
+# fig_mesh.savefig('../../figures/free-surface_mesh.svg')
 
-point_indices = [ 0, 0 ]
-
-for boundary_name in boundary_names :
-
-    point_indices[1] += len( boundaries[ boundary_name ] ) - 1
-
-    indices = arange( point_indices[0], point_indices[1] + 1 )
-
-    if indices[-1] >= len( all_points ) :
-        indices[-1] = 0
-
-    print( boundary_name, point_indices, indices )
-
-    Th.add_boundary_edges( indices, boundary_name )
-
-    point_indices[0] = point_indices[1]
-
-error_field = Th.x*0 + 1
+# 
+# error_field = Th.x*0 + 1
 
 for _ in range(6) :
 
-    Th = pyff.adaptmesh( Th, error_field, hmax = H/15, iso = 1, err = 1e-2 )
+    try :
+        Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), hmax = H/15, iso = 1, err = 1e-2 )
+    except :
+        pass
 
     #########################
     #
@@ -95,7 +93,7 @@ for _ in range(6) :
     boundary_name_to_int = Th.get_boundary_label_conversion()[0]
     # print( Th.get_boundary_edges() )
 
-    for boundary_name in boundary_names :
+    for boundary_name in Th.get_boundaries().keys() :
         FE_matrices[ boundary_name ] = 'int1d(Th,' + str( boundary_name_to_int[ boundary_name ] ) + ')( u*v )'
 
 
@@ -103,20 +101,6 @@ for _ in range(6) :
         # BoundaryGramian = 'int1d(Th, 1, 2, 3, 4 )( u*v )'
 
     FE_matrices = script.get_output()
-
-    ##########################
-    #
-    # Find the origin
-    #
-    ##########################
-
-    i_origin = set( Th.get_boundaries()['seepage_face'][0] ) & set( Th.get_boundaries()['river_wall'][0] )
-
-    if len( i_origin ) == 1 :
-        i_origin = list( i_origin )[0]
-    else :
-        print("Can't find origin.", i_origin )
-        break
 
     #########################
     #
@@ -178,7 +162,7 @@ for _ in range(6) :
     #
     #########################
 
-    error_field = ( x - Th.x )*( y - Th.y )
+    # error_field = ( x - Th.x )*( y - Th.y )
 
 ##########################
 #
@@ -190,7 +174,6 @@ Th = dict( omega = Th, z = deepcopy(Th) )
 
 Th['z'].x = x
 Th['z'].y = y
-# Th['z'].y -= Th['z'].y[i_origin]
 
 omega = Th['omega'].x + 1j*Th['omega'].y
 z = Th['z'].x + 1j*Th['z'].y

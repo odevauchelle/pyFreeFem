@@ -57,3 +57,159 @@ When the rainfal rate $R$ is small enough, our problem can be linearized. In the
 This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
 
 ### Build the mesh
+
+There are of course many ways to build the mesh. Here's an option that favors clarity over terseness. We first define and name the points we need:
+
+```python
+from pylab import *
+
+R = 0.15
+H = .8
+
+points = dict(
+    seepage_bottom = ( 0, 0 ),
+    seepage_top = ( R, 0 ),
+    divide_top = ( 1, 0 ),
+    divide_bottom = ( 1, -H  ),
+    river_bottom = ( 0, -H )
+    )
+```
+
+We then name the boundaries that link these points:
+
+```python
+boundaries = dict(
+    free_surface = [ 'divide_top', 'seepage_top' ],
+    seepage_face = [ 'seepage_top', 'seepage_bottom' ],
+    river_wall = [ 'seepage_bottom', 'river_bottom' ],
+    bottom = [ 'river_bottom', 'divide_bottom' ],
+    divide = [ 'divide_bottom', 'divide_top' ]
+    )
+```
+We then build the mesh, provide it with boundaries, and refine it for prettiness:
+
+```python
+import pyFreeFem as pyff
+
+
+Th = pyff.TriMesh( *array( list( points.values() ) ).T )
+
+for boundary_name, boundary_points in boundaries.items() :
+    Th.add_boundary_edges( [ list( points.keys() ).index( point ) for point in boundary_points ], boundary_name )
+
+Th = pyff.adaptmesh( Th, 1, iso = 1, hmax = .3 )
+```
+
+Here's how the resulting mesh looks like:
+
+```python
+Th.plot_triangles( ax = ax_mesh )
+Th.plot_boundaries()
+legend()
+```
+![Initial mesh](../figures/free-surface_mesh.svg)
+
+When creating this mesh, we've assumed that the aquifer's bottom is flat in the mathematical space; as a result, it will not be flat in the physical space.
+
+### Get the finite-elements matrices
+
+To solve the Laplace equation on this mesh, we will need the stiffness matrix, which corresponds to
+
+$$
+\iint_{\Omega} \partial_i u \partial_i v
+$$
+
+and the Gramian matrix for each boundary, that is:
+
+$$
+\int_{\mathrm{boundary}} u v
+$$
+
+To get these matrices, we define a pyFreeFem script with the mesh as an input:
+
+```python
+script = pyff.InputScript( Th = Th )
+script += pyff.edpScript('fespace Vh( Th, P1 );')
+
+FE_matrices = dict( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
+
+boundary_name_to_int = Th.get_boundary_label_conversion()[0]
+
+for boundary_name in Th.get_boundaries().keys() :
+    FE_matrices[ boundary_name ] = 'int1d(Th,' + str( boundary_name_to_int[ boundary_name ] ) + ')( u*v )'
+
+script += pyff.VarfScript( **FE_matrices )
+
+FE_matrices = script.get_output()
+```
+
+### Write and solve the problem
+
+We now need to find the physical coordinate $z=x+iy$ as a function of the mathematical coordinate $\omega=u+iv$. Because our mapping from $z$ to $omega$ is conformal, both $x$ and $y$ are analytical functions. This means we need to solve the Laplace equation twice over the mathematical domain.
+
+The boundary conditions are now expressed in terms of $x$ or $y$. On the bottom, for instance, $y = -H$. This also means that $\partial_n x=0$, by virtue of the Cauchy-Riemann equations. As usual with finite elements, we enforce the first one by requiring
+
+$$
+y + H = \epsilon \partial_n y
+$$
+
+The same reasoning applies to the remaining boundaries.
+
+We now write the finite element problem in terms of matrices, namely $M \cdot X = B$. For the $x$ coordinate, this reads
+
+```python
+from scipy.sparse.linalg import spsolve
+
+epsilon = 1e-6
+
+M = - FE_matrices['stiffness']
+B = Th.x*0
+
+boundary_name = 'seepage_face'
+M += 1/epsilon*FE_matrices[boundary_name]
+
+boundary_name = 'river_wall'
+M += 1/epsilon*FE_matrices[boundary_name]
+
+boundary_name = 'divide'
+M += 1/epsilon*FE_matrices[boundary_name]
+B += 1/epsilon*FE_matrices[boundary_name]*( Th.x*0 + 1 )
+
+boundary_name = 'bottom' # x = u
+M += 1/epsilon*FE_matrices[boundary_name]
+B += 1/epsilon*FE_matrices[boundary_name]*( Th.x )
+
+boundary_name = 'free_surface'
+M += 1/epsilon*FE_matrices[boundary_name]
+B += 1/epsilon*FE_matrices[boundary_name]*( Th.x - R )/( 1 - R )
+
+x = spsolve( M, B )
+```
+The resulting vector, `x`, is the solution to our problem.
+
+In the above expression, we need to remember that `Th.x` is the horizontal coordinate in the mathematical space, namely $u$ (and not $x$). This unfortunate notation cannot be avoided, since `Th.x` refers to the attribute `x` of the triangulation object that underlies the mesh `Th`. This convention is consistent with that used in FreeFem++.
+
+Similarly, for `y`:
+
+```python
+M = - FE_matrices['stiffness']
+B = Th.x*0
+
+boundary_name = 'bottom' # dy/dn = 1
+B += FE_matrices[boundary_name]*( Th.x*0 + 1 )
+
+boundary_name = 'free_surface'
+B += -FE_matrices[boundary_name]*( Th.x*0 + 1 )/( 1 - R )
+
+y = spsolve( M, B )
+```
+
+We have now solved our problem, but on a very crude mesh. To refine the mesh, we simply need to ad the following lines before we create the finite-element matrices, and repeat the solution procedure until the desired precision is reached:
+
+```python
+try :
+    Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), hmax = H/15, iso = 1, err = 1e-2 )
+except :
+    pass
+```
+With this, we refine the mesh with respect to $(x-u)(y-v)$.
