@@ -41,7 +41,7 @@ where $R$ is the recharge (rainfall) rate.
 We define the Zhukovsky map $f$:
 
 $$
-\omega = z - i \phi
+\omega = z - i \Phi
 $$
 
 The figure below shows our aquifer in the mapped space. The boundary conditions remain unchanged. We will solve the Laplace equation in this mathematical space.
