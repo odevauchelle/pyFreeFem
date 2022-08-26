@@ -44,7 +44,13 @@ $$
 \omega = z - i \Phi
 $$
 
-The figure below shows our aquifer in the mapped space. The boundary conditions remain unchanged. We will solve the Laplace equation in this mathematical space.
+The figure below shows our aquifer in the mapped space. We will solve the Laplace equation in this mathematical space (figure below). The boundary conditions are now:
+
+- On the bottom, $y = -H$ and $x = u$
+- On the divide, $x = 1$
+- On the river wall, $x=0$
+- On the seepage face, $x=0$
+- On the free surface, $x = \dfrac{u-R}{1-R}$
 
 ![Boundaries in physical plane](../figures/aquifer_boundaries_mathematical_plane.svg)
 
