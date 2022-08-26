@@ -10,7 +10,7 @@ sys.path.append('/home/olivier/git/pyFreeFem')
 import pyFreeFem as pyff
 
 R = 0.3
-H = .8
+H = .5
 epsilon = 1e-6
 
 #########################
@@ -63,10 +63,10 @@ for boundary_name in Th.get_boundaries().keys() :
 
 script += pyff.VarfScript( **FE_matrices )
 
-for relax_i in range(3) :
+for relax_i in range(5) :
 
     try :
-        Th.y += - .5*delta_y
+        Th.y += - delta_v
         del x
     except :
         pass
@@ -74,12 +74,11 @@ for relax_i in range(3) :
     for adapt_i in range(3) :
 
         try :
-            Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), hmax = H/15, iso = 1, err = 1e-2 )
+            Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), hmax = H/20, err = .5e-2 )
         except :
-            Th = pyff.adaptmesh( Th, 1, hmax = H/5, iso = 1 )
+            Th = pyff.adaptmesh( Th, 1, hmax = H/5 )
 
         FE_matrices = script.get_output( Th = Th )
-
 
         #########################
         #
@@ -148,10 +147,10 @@ for relax_i in range(3) :
     M += 1/epsilon*FE_matrices[boundary_name]
     B += 1/epsilon*FE_matrices[boundary_name]*( y + H )
 
-    for boundary_name in ['free_surface', 'seepage_face' ] : # delta_y = 0
+    for boundary_name in ['free_surface', 'seepage_face' ] : # delta_v = 0
         M += 1/epsilon*FE_matrices[boundary_name]
 
-    delta_y = spsolve( M, B )
+    delta_v = spsolve( M, B )
 
 ##########################
 #
@@ -187,6 +186,7 @@ for space in Th.keys() :
 
     ax[space].tricontour( Th[space], real(Phi), **st.flow['iso_head'] )
     ax[space].tricontour( Th[space], imag(Phi), **st.flow['flow_lines'] )
+    ax[space].tricontour( Th[space], imag(Phi), levels = [1e-3],colors = 'red' )
 
     # Th[space].plot_boundaries( ax = ax[space] )
     # Th[space].plot_triangles( ax = ax[space], **st.mesh )

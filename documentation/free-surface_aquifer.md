@@ -58,7 +58,7 @@ There is still a free boundary in this problem: the bottom's location is unknown
 
 ## Linearized problem
 
-When the rainfal rate $R$ is small enough, our problem can be linearized. In the mathematical space, this translates into the bottom line remaining at $\mathrm{Im} \omega = - H$. In other words, we let the bottom lie where it is when $R=0$.
+When the rainfal rate $R$ is small enough, our problem can be linearized. In the mathematical space, this translates into the bottom line remaining at $\mathrm{Im} \, \omega = - H$. In other words, we let the bottom lie where it is when $R=0$.
 
 This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
 
@@ -246,7 +246,7 @@ z = Th['z'].x + 1j*Th['z'].y
 Phi = 1j*( omega - z )
 ```
 
-We can finally plot $Phi$ in the physical and mathematical planes:
+We can finally plot $\Phi$ in the physical and mathematical planes:
 
 ```python
 fig, ax = subplots( ncols = 2, figsize = (8,5) )
@@ -274,23 +274,27 @@ To get a better approximation of the flow, we need to relax the small-rainfall a
 
 ## Relaxation to the non-linear solution
 
+### Method
+
 We now return to the orginal problem, for which the location of the bottom in the mathematical plane is unknown.
 
 We propose the following relaxation method:
 
-- Solve the linear problem
-- Note that the conformal map is almost the identity near the river_bottom
-- Deform the mesh in the mathematical plane so that its bottom moves by an amount opposed to the error in the physical plane, that is, $y-H$
+- Solve the linear problem.
+- Note that the conformal map is almost the identity near the aquifer's bottom.
+- Deform the mesh in the mathematical plane so that the bottom moves by an amount opposed to the error in the physical plane, that is, some fraction of $y+H$.
 - Repeat and hope for convergence.
 
 The complete code for this problem is [here](../examples/free-surface_aquifer/non-linear_problem.py).
 
-### Error field
+### Deformation field
 
-We want to deform the mesh in a smooth way. To do so, we can create a field $\delta y$ that satisfy the Laplace equation, with the following condition on the bottom:
+We want to deform the mesh in a smooth way. To do so, we can create a field $\delta_v$ that satisfies the Laplace equation, with the following conditions:
 
-$$
-\delta y = y + H
-$$
+- On the bottom, $\delta_v = y + H$
+- On the seepage face, $\delta_v = 0$
+- On the free surface, $\delta_v = 0$
+- On the divide, $\partial_n \delta_v = 0$
+- On the river wall, $\partial_n \delta_v = 0$
 
-On the two sides, we can require, for instance, that $\partial \delta y = \delta y$. On the free surface, we need $\delta y$ to vanish.
+The last two boundary conditions are somewhat arbitrary. They only need to be compatible with the first one at the junctions with the bottom.
