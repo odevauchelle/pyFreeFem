@@ -186,7 +186,7 @@ for space in Th.keys() :
 
     ax[space].tricontour( Th[space], real(Phi), **st.flow['iso_head'] )
     ax[space].tricontour( Th[space], imag(Phi), **st.flow['flow_lines'] )
-    ax[space].tricontour( Th[space], imag(Phi), levels = [1e-3],colors = 'red' )
+    # ax[space].tricontour( Th[space], imag(Phi), levels = [1e-3],colors = 'red' )
 
     # Th[space].plot_boundaries( ax = ax[space] )
     # Th[space].plot_triangles( ax = ax[space], **st.mesh )
@@ -198,10 +198,23 @@ for space in Th.keys() :
     ax[space].set_title( titles[space] )
     #
     ax[space].axis('scaled')
-    # ax[space].axis('off')
+    ax[space].axis('off')
 
 ax['omega'].legend( loc = 'center' )
 
 # savefig('../../figures/free-surface_non_linear.svg', bbox_inches = 'tight')
+##########################
+#
+# Interpolation
+#
+##########################
+
+from matplotlib.tri import LinearTriInterpolator
+measurement_point = .5, -H/10
+print( LinearTriInterpolator( Th['z'], real( Phi ) )( *measurement_point ) )
+
+
+# p['phi'] = str( LinearTriInterpolator( Th['z'], real( Phi ) )( *p['X_measurement'] ) )
+ax['z'].plot( *measurement_point, '.k' )
 
 show( block = True )
