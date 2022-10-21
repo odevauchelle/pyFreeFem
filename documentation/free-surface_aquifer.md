@@ -298,3 +298,46 @@ We want to deform the mesh in a smooth way. To do so, we can create a field $\de
 - On the river wall, $\partial_n \delta_v = 0$
 
 The last two boundary conditions are somewhat arbitrary. They only need to be compatible with the first one at the junctions with the bottom.
+
+This reads
+
+```python
+M = - FE_matrices['stiffness']
+
+boundary_name = 'bottom' # x = u
+M += 1/epsilon*FE_matrices[boundary_name]
+B += 1/epsilon*FE_matrices[boundary_name]*( y + H )
+
+for boundary_name in ['free_surface', 'seepage_face' ] : # delta_v = 0
+    M += 1/epsilon*FE_matrices[boundary_name]
+
+delta_v = spsolve( M, B )
+```
+
+We then just need to move the mesh according to the field $\delta_y$:
+
+```python
+Th.y += - delta_v
+```
+
+### Final mesh
+
+If we're lucky, the above procedure converges to a final mesh in the mathematical plane. Here is the result:
+
+![Final mesh](../figures/free-surface_non_linear.svg)
+
+To get proper convergence, we find that we need to adjust the number of iterations and the required precision of the `adaptmesh` loop. Also, the deeper the aquifer, the better for the convergence. This was to be expected, since we assumed that the mapping is virtually the identity near the bottom.
+
+### Interpolation
+
+We now want to evaluate the pressure head at a given point, with physical coordinates $(x,y)$. We can't do this directly, since our numerical results are expressed in terms of the mathematical coordinate $\omega$. We thus need to interpolate our results on the triangular mesh:
+
+```python
+from matplotlib.tri import LinearTriInterpolator
+
+print( LinearTriInterpolator( Th['z'], real( Phi ) )( .5, -H/10 ) )
+```
+
+```console
+0.3172334927095583
+```
