@@ -25,4 +25,7 @@ pp.yticks([])
 
 # pp.savefig( '../figures/' + __file__.split('/')[-1].split('.')[0] + '.svg' , bbox_inches = 'tight' )
 
+
+print(Th.x)
+print(Th.triangles)
 pp.show()

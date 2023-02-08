@@ -23,7 +23,7 @@ print( script.run() )
 
 ## Create a mesh
 
-FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includes a mesh class inherited from matplotlib.Triangulation which keeps track of these labels.
+FreeFem++ attributes labels to nodes, triangles and boundaries. pyFreeFem includes a mesh class inherited from [`matplotlib.tri.Triangulation`](https://matplotlib.org/stable/api/tri_api.html) which keeps track of these labels.
 
 ```Python
 script = pyff.edpScript('''
@@ -42,6 +42,8 @@ pp.legend( title = 'Boundary label' )
 pp.show()
 ```
 ![Circular mesh](./figures/create_mesh.svg)
+
+Like for the parent [`matplotlib.tri.Triangulation`](https://matplotlib.org/stable/api/tri_api.html) class, the nodes coordinates are stored in `Th.x` and `Th.y`, whereas the connectivity is stored in `Th.triangles`.
 
 Creating a mesh with FreeFem++ can be useful by itself, for instance to calculate [travel times](./documentation/travel_time.md) along known streamlines. Often, though, we want to use that mesh for finite elements computations.
 
