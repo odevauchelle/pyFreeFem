@@ -120,6 +120,7 @@ quiver( x_P0, y_P0, real( dx_phi ), real( dy_phi ) )
 The energy flux associated to our wave is the imaginary part of $\phi^* \, \nabla \phi$. Let's plot this:
 
 ```python
+phi_P0 = proj@phi
 quiver( x_P0, y_P0, imag( phi_P0.conj()*dx_phi ), imag( phi_P0.conj()*dy_phi ) )
 ```
 
