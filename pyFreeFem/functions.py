@@ -187,12 +187,12 @@ def get_projector( Th, P_in, P_out ):
 
     return spsolve( GramianOO, GramianIO )
 
-def gradient_matrices( Th ) :
-    
+def gradient_matrices( Th, P0 = 'P0', P1 = 'P1' ) :
+
     '''
     Compute the P1 to P0 gradient matrices, and the areas of the mesh triangles.
 
-    matrices = gradient_matrices( Th )
+    matrices = gradient_matrices( Th, P0 = 'P0', P1 = 'P1' )
 
     matrices.keys() : ['grad_x', 'grad_y', 'area']
 
@@ -202,10 +202,7 @@ def gradient_matrices( Th ) :
 
     script = InputScript( Th = Th )
 
-    script += edpScript('''
-    fespace Vh0( Th, P0 );
-    fespace Vh1( Th, P1 );
-    ''')
+    script += edpScript( 'fespace Vh0( Th, ' + P0 + ' ); fespace Vh1( Th, ' + P1 + ' );\n')
 
     script += VarfScript( grad_x = 'int2d(Th)( u*dx(v) )', grad_y = 'int2d(Th)( u*dy(v) )', fespaces = ('Vh0', 'Vh1') )
     script += VarfScript( area = 'int2d(Th)( u*v )', fespaces = ('Vh0', 'Vh0') )
