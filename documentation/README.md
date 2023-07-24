@@ -57,8 +57,10 @@ You should see the mesh appear in a FreeFem++ window.
 To get finite element matrices, we first need to create a mesh, and define a finite element space:
 
 ```python
+script += '''
 fespace Vh( Th, P1 );
 Vh u,v;
+'''
 ```
 
 The `VarfScript` function then creates, and exports, the matrix corresponding to a variational formulation:
