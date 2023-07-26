@@ -13,7 +13,7 @@ import pyFreeFem as pyff
 #
 ################################
 
-h = .15
+h = .05
 
 theta = linspace( 0, 2*pi, int(2*pi/h))[:-1]
 
@@ -54,10 +54,14 @@ axis('equal'); axis('off')
 ################################
 
 region = array( [0]*len( Th.triangles ) )
+triangle_centers = []
+
 
 for i in range( len( Th.triangles ) ) :
 
     xy_center = mean( Th.x[ Th.triangles[i] ] ), mean( Th.y[ Th.triangles[i] ] )
+
+    triangle_centers += [ xy_center ]
 
     if norm( xy_center - X_b ) < r :
         region[i] = 1
@@ -82,29 +86,74 @@ script += pyff.VarfScript(
     gravity_out = 'int2d(Th)( dy(u)*v*( 1 - region ) )',
     )
 
+script += pyff.VarfScript( fespaces = ('Vh','Vh0'),
+    gramianP0 = 'int2d(Th)( u*v )',
+    grad_x = 'int2d(Th)( dx(u)*v )',
+    grad_y = 'int2d(Th)( dy(u)*v )',
+    )
+
 # script += '''
-# plot(region,fill=1);
+# plot(region,fill=1,ps="region.eps");
 # '''
 
 ff_out = script.get_output()
 
 #################################
 #
-# solve (Boltzmann equilibrium)
+# solve
 #
 ################################
 
 beta_out = 1
-beta_in = beta_out*2
+beta_in = beta_out*1.2
+beta = beta_in*region + beta_out*( 1 - region )
+force = 1
 
-lsv, v, rsv = svds( ff_out['stiffness'] + ff_out['gravity_in']*beta_in + ff_out['gravity_out']*beta_out , k = 3, which = 'SM')
+lsv, v, rsv = svds( ff_out['stiffness'] + force*( ff_out['gravity_in']*beta_in + ff_out['gravity_out']*beta_out ) , k = 1, which = 'SM')
 print(v)
 rho_D = lsv[:,0]
+
+################################
+#
+# normalization
+#
+################################
+
+D_out = 1
+D_in = D_out*( beta_in/beta_out )**(-3/2)
+D = D_in*region + D_out*( 1 - region )
+
+Z = 1/D.T@( ff_out['gramianP0']@rho_D )
+
+rho_D /= Z
+
+proj01 = pyff.get_projector( Th, 'P0', 'P1' )
+
+rho = rho_D/( proj01@D )
+
+################################
+#
+# current
+#
+################################
+nabla = pyff.gradient_matrices( Th, 'P0', 'P1' )
+proj10 = pyff.get_projector( Th, 'P1', 'P0' )
+
+qx = -nabla['grad_x']@rho_D
+qy = -nabla['grad_y']@rho_D - force*beta*( proj10@rho_D )
+
+
+# figure()
+#
+# plot( array( triangle_centers )[:,1], force*beta*( proj10@rho_D ), '.' )
+# plot( array( triangle_centers )[:,1], -ff_out['grad_y']@rho_D, '.' )
 
 figure()
 
 tricontourf( Th, rho_D )
 Th.plot_boundaries()
+
+quiver( *array( triangle_centers ).T, qx, qy  )
 
 axis('equal'); axis('off')
 
