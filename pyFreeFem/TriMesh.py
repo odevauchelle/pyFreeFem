@@ -24,13 +24,13 @@
 # G. Seizilles, E. Lajeunesse, Physical Review Letters, 123, 014501, 2019
 
 
-
 import matplotlib.tri as mptri
 from pylab import gca, mean, array, nan, arange
 
 if __name__ == '__main__' :
     from meshTools.segments import *
     from meshTools.polygon_triangulate import polygon_triangulate
+    # from functions import adaptmesh
 
 else :
     from .meshTools.segments import *
@@ -311,6 +311,9 @@ class TriMesh( mptri.Triangulation ) :
                 ax.plot( mean(x), mean(y), 'ow', ms = 12 )
                 ax.text( mean(x), mean(y), self.boundary_edges[edge], **label_style )
 
+    # def adaptmesh( self, *args, **kwargs ) : # import standalone module...
+    #
+    #     self = adaptmesh( self, *args, **kwargs )
 
 
 def TriMesh_from_polygon( points, label = None ) :
