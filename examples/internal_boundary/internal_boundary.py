@@ -1,6 +1,6 @@
 
 from pylab import *
-from scipy.sparse.linalg import svds
+from scipy.sparse.linalg import svds, spsolve
 
 import sys
 sys.path.append('./../../')
@@ -13,7 +13,7 @@ import pyFreeFem as pyff
 #
 ################################
 
-h = .05
+h = .1
 
 theta = linspace( 0, 2*pi, int(2*pi/h))[:-1]
 
@@ -71,7 +71,7 @@ script = pyff.InputScript( Th = Th )
 
 script +='''
 fespace Vh0( Th, P0 );
-fespace Vh( Th, P1 );
+fespace Vh( Th, P2 );
 Vh0 region;
 
 Vh u, v;
@@ -87,9 +87,13 @@ script += pyff.VarfScript(
     )
 
 script += pyff.VarfScript( fespaces = ('Vh','Vh0'),
-    gramianP0 = 'int2d(Th)( u*v )',
+    gramianP2P0 = 'int2d(Th)( u*v )',
     grad_x = 'int2d(Th)( dx(u)*v )',
     grad_y = 'int2d(Th)( dy(u)*v )',
+    )
+
+script += pyff.VarfScript( fespaces = ('Vh0','Vh0'),
+    gramianP0P0 = 'int2d(Th)( u*v )'
     )
 
 # script += '''
@@ -123,24 +127,28 @@ D_out = 1
 D_in = D_out*( beta_in/beta_out )**(-3/2)
 D = D_in*region + D_out*( 1 - region )
 
-Z = 1/D.T@( ff_out['gramianP0']@rho_D )
+Z = 1/D.T@( ff_out['gramianP2P0']@rho_D )
 
 rho_D /= Z
 
-proj01 = pyff.get_projector( Th, 'P0', 'P1' )
+proj_from_0 = pyff.get_projector( Th, 'P0', 'P2' )
 
-rho = rho_D/( proj01@D )
+rho = rho_D/( proj_from_0@D )
 
 ################################
 #
 # current
 #
 ################################
-nabla = pyff.gradient_matrices( Th, 'P0', 'P1' )
-proj10 = pyff.get_projector( Th, 'P1', 'P0' )
+proj_to_0 = pyff.get_projector( Th, 'P2', 'P0' )
+proj_to_1 = pyff.get_projector( Th, 'P2', 'P1' )
 
-qx = -nabla['grad_x']@rho_D
-qy = -nabla['grad_y']@rho_D - force*beta*( proj10@rho_D )
+# nabla = pyff.gradient_matrices( Th, 'P0', 'P2' )
+# qx = -nabla['grad_x']@rho_D
+# qy = -nabla['grad_y']@rho_D - force*beta*( proj10@rho_D )
+
+qx = -spsolve( ff_out['gramianP0P0'], ff_out['grad_x']@rho_D )
+qy = -spsolve( ff_out['gramianP0P0'], ff_out['grad_y']@rho_D + force*beta*( ff_out['gramianP2P0']@rho_D ) )
 
 
 # figure()
@@ -150,7 +158,7 @@ qy = -nabla['grad_y']@rho_D - force*beta*( proj10@rho_D )
 
 figure()
 
-tricontourf( Th, rho_D )
+tricontourf( Th, proj_to_1@rho )
 Th.plot_boundaries()
 
 quiver( *array( triangle_centers ).T, qx, qy  )
