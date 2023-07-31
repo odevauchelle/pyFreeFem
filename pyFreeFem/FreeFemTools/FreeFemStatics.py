@@ -39,9 +39,10 @@ default_variable_names = {
     }
 
 
+
 ###################################
 #
-# EXPORT MESH
+# EXPORT MESH to FreeFem++
 #
 ###################################
 

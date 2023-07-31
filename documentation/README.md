@@ -146,6 +146,8 @@ Here is the result:
 
 - [Build](./build_your_own_mesh.md) a mesh from scratch
 
+- [Save](./save_mesh_to_json.md) a mesh as a Json file 
+
 - [Create](./mesh_from_polygon.md) a mesh based on its boundary
 
 - [Refine](./adaptmesh.md) a mesh manually

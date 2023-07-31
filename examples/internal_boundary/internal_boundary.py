@@ -13,7 +13,7 @@ import pyFreeFem as pyff
 #
 ################################
 
-h = .1
+h = .2
 
 theta = linspace( 0, 2*pi, int(2*pi/h))[:-1]
 

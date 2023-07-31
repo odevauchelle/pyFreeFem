@@ -29,11 +29,12 @@ from pylab import gca, mean, array, nan, arange
 
 if __name__ == '__main__' :
     from meshTools.segments import *
+    from meshTools.export_to_json import export_to_json
     from meshTools.polygon_triangulate import polygon_triangulate
-    # from functions import adaptmesh
 
 else :
     from .meshTools.segments import *
+    from .meshTools.export_to_json import export_to_json
     from .meshTools.polygon_triangulate import polygon_triangulate
 
 TriMesh_structure ='''
@@ -315,6 +316,8 @@ class TriMesh( mptri.Triangulation ) :
     #
     #     self = adaptmesh( self, *args, **kwargs )
 
+    def to_json( self, **kwargs ) :
+        return export_to_json( self, **kwargs )
 
 def TriMesh_from_polygon( points, label = None ) :
     '''
