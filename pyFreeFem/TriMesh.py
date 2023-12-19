@@ -333,7 +333,7 @@ def TriMesh_from_polygon( points, label = None ) :
 
     if not label is None :
 
-        if label is 'auto' :
+        if label == 'auto' :
             the_mesh.add_boundary_edges( arange( len( points ) ) )
 
         else :
