@@ -172,6 +172,7 @@ def invent_label( existing_labels ) :
 
 
 def node_index_to_triangle_index_edges( edges, triangles, label = 1 ) :
+    
     '''
     triangle_index_edges = edges_node_index_egdes_to_triangle_edges( edges, triangles, label = 1 )
 
@@ -182,6 +183,7 @@ def node_index_to_triangle_index_edges( edges, triangles, label = 1 ) :
     triangles : a triangulation
     label : the label of the edges
     '''
+
     return [ list( edge_nodes_to_triangle_edge( edge, triangles ) ) + [ label ] for edge in edges ]
 
 

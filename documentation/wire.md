@@ -14,7 +14,7 @@ box_points = [ [ .5, 0 ], [.5,1], [-.5,1], [-.5,0] ]
 wire_points = [ [-.1,0], [-.1,.6] ]
 ```
 
-We then build the mesh, and define the two boundaries.
+We then build the mesh, and define the two boundaries. (The method below is primitive, see [here](./triangle.md) a more general method.)
 
 ```python
 Th = pyff.TriMesh( *array( box_points + wire_points ).T )
@@ -22,7 +22,6 @@ Th.add_boundary_edges( range( len( box_points ) )[1:-1] , 'box' )
 Th.add_boundary_edges( range( len( box_points ), len( box_points ) + len( wire_points ) ) , 'wire' )
 Th.add_boundary_edges( [3,4,0], 'bottom' )
 ```
-
 Here is the result:
 
 ```python

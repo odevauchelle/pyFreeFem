@@ -72,7 +72,7 @@ class TriMesh( mptri.Triangulation ) :
         Import and export from and to FreeFem mesh.
     '''
 
-    def __init__( self, x, y, triangles = None, boundary_edges = None, node_labels = None, triangle_labels = None ) :
+    def __init__( self, x, y, triangles = None, boundary_edges = None, node_labels = None, triangle_labels = None, boundary_edge_labels = None ) :
 
         '''
         Create a triangular mesh suited for FreeFem++.
@@ -103,8 +103,19 @@ class TriMesh( mptri.Triangulation ) :
         self.triangle_labels = triangle_labels
         self.boundary_edges = {}
 
+        if not boundary_edge_labels is None : # assumes boundary_edges is in the form [ [start_node, end_node], ... ]
+            
+            boundary_edges_with_label = {}
+
+            for i, edge in enumerate( boundary_edges ) :
+                 boundary_edges_with_label[ edge_nodes_to_triangle_edge( edge, self.triangles) ] = boundary_edge_labels[i]
+            
+            boundary_edges = boundary_edges_with_label
+
+
         if not boundary_edges is None :
             self.add_boundary_edges( boundary_edges )
+
 
 
     def add_boundary_edges( self, boundary_edges, label = None ) :
@@ -375,6 +386,12 @@ def TriMesh_from_boundaries( boundaries, labels = None ) :
 
     return the_mesh
 
+triangle_to_TriMesh_translator = {
+    'segments' : ( 'boundary_edges', lambda x: x ) ,
+    'triangle_attributes' : ( 'triangle_labels', lambda x: x.flatten() ),
+    'vertex_markers' : ( 'node_labels', lambda x: x.flatten() ),
+    'segment_markers' : ( 'boundary_edge_labels', lambda x: x.flatten() ),
+    }
 
 def triangle_to_TriMesh( T ) :
     '''
@@ -391,11 +408,15 @@ def triangle_to_TriMesh( T ) :
         mesh : a TriMesh object
     '''
 
-    try :
-        return TriMesh( *array( T['vertices'] ).T, triangles = T['triangles'], boundary_edges = T['segments'] )
-    
-    except :
-        return TriMesh( *array( T['vertices'] ).T, triangles = T['triangles'] ) 
+    optional_kwargs = {}
+
+    for triangle_kwarg, ( TriMesh_kwarg, mapping ) in triangle_to_TriMesh_translator.items() :
+        try :
+            optional_kwargs[ TriMesh_kwarg ] = mapping( T[ triangle_kwarg ] )
+        except :
+            pass
+
+    return TriMesh( *array( T['vertices'] ).T, triangles = T['triangles'], **optional_kwargs ) 
 
 
 
