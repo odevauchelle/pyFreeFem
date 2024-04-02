@@ -376,6 +376,26 @@ def TriMesh_from_boundaries( boundaries, labels = None ) :
     return the_mesh
 
 
+def triangle_to_TriMesh( T ) :
+    '''
+    Import a triangulation as a triangle object.
+
+    https://rufat.be/triangle/examples.html
+
+    mesh = triangle_to_TriMesh( T )
+
+    Arguments:
+        T : a triangle object
+
+    output:
+        mesh : a TriMesh object
+    '''
+
+    try :
+        return TriMesh( *array( T['vertices'] ).T, triangles = T['triangles'], boundary_edges = T['segments'] )
+    
+    except :
+        return TriMesh( *array( T['vertices'] ).T, triangles = T['triangles'] ) 
 
 
 
