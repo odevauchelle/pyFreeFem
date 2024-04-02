@@ -4,7 +4,7 @@ The [`triangle`](https://rufat.be/triangle/index.html) library can handle constr
 
 ## Build a [`triangle`](https://rufat.be/triangle/index.html) triangulation
 
-Let's triangulate a box with a river cutting through it:
+We want to triangulate a box with a river cutting through it. We can try with a regular Delaunay triangulation:
 
 ```python
 import triangle as tr
@@ -15,14 +15,25 @@ Ts = dict(
     segments = [ [ 0, 4 ], [ 4, 1 ], [1, 2], [2,3], [3, 0], [4,5] ]
     )
 
-T = tr.triangulate( Ts, 'pa' )
+T = tr.triangulate( Ts )
 
 tr.compare( plt, Ts, T )
 ```
 
-The result looks like this:
+By default, the `tr.triangulate` function does not take the segments into account:
 
 ![Compare](./../figures/compare.svg)
+
+To take them into account, we need to add the keyword `'pa'`:
+
+```python
+T = tr.triangulate( Ts, 'pa' )
+```
+
+Indeed:
+
+![Compare](./../figures/compare_2.svg)
+
 
 ## Convert the triangulation into a `TriMesh` object
 
@@ -34,14 +45,14 @@ import pyFreeFem as pyff
 Th = pyff.triangle_to_TriMesh( T )
 ```
 
-However, the [`triangle`](https://rufat.be/triangle/index.html) does not keep track of the boundary handles. We thus need to add them by hand:
+However, [`triangle`](https://rufat.be/triangle/index.html) objects do not keep track of boundary handles. We thus need to add them by hand:
 
 ```python
-Th.add_boundary_edges( Ts['segments'][:-1], 'basin' )
-Th.add_boundary_edges( Ts['segments'][-1], 'river' )
+Th.add_boundary_edges( T['segments'][:-2], 'basin' )
+Th.add_boundary_edges( T['segments'][-2:], 'river' )
 ```
 
-We may now refine the mesh and plot it:
+We may now refine the mesh as much as we want, and plot it:
 
 ```python
 for _ in range(3):
