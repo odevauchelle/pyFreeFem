@@ -22,7 +22,7 @@ tr.compare( plt, Ts, T )
 
 By default, the `tr.triangulate` function does not take the segments into account:
 
-![Compare](./../figures/compare.svg)
+![Compare](./../figures/compare_2.svg)
 
 To take them into account, we need to add the keyword `'pa'`:
 
@@ -32,7 +32,7 @@ T = tr.triangulate( Ts, 'pa' )
 
 Indeed:
 
-![Compare](./../figures/compare_2.svg)
+![Compare](./../figures/compare.svg)
 
 
 ## Convert the triangulation into a `TriMesh` object
