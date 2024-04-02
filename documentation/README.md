@@ -175,3 +175,5 @@ Here is the result:
 - Find the [discharge through a wire](./discharge_through_wire.md)
 
 - Compute the electric potential around a wire of [finite resistivity](./wire.md)
+
+- Create a [constrained triangulation](./triangle.md) with [`triangle`](https://rufat.be/triangle/index.html)
