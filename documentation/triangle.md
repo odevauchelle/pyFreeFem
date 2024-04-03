@@ -99,7 +99,7 @@ Here is the result:
 
 ![Hole and region](./../figures/hole.svg)
 
-The `pyff.triangle_to_TriMesh` function keeps track of the labelling of nodes, boundary edges and vertices:
+The `pyff.triangle_to_TriMesh` function keeps track of the labelling of nodes, boundary edges and vertices. The labels, which can be floats in a `triangle` object, are converted into integers in `pyFreeFem`.
 
 ```python
 Th = pyff.triangle_to_TriMesh( T )

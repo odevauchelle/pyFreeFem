@@ -386,11 +386,15 @@ def TriMesh_from_boundaries( boundaries, labels = None ) :
 
     return the_mesh
 
+
+def triangle_to_TriMesh_label( triangle_labels ) :
+    return [ int(label) for label in triangle_labels.flatten() ]
+
 triangle_to_TriMesh_translator = {
     'segments' : ( 'boundary_edges', lambda x: x ) ,
-    'triangle_attributes' : ( 'triangle_labels', lambda x: x.flatten() ),
-    'vertex_markers' : ( 'node_labels', lambda x: x.flatten() ),
-    'segment_markers' : ( 'boundary_edge_labels', lambda x: x.flatten() ),
+    'triangle_attributes' : ( 'triangle_labels', triangle_to_TriMesh_label ),
+    'vertex_markers' : ( 'node_labels', triangle_to_TriMesh_label ),
+    'segment_markers' : ( 'boundary_edge_labels', triangle_to_TriMesh_label ),
     }
 
 def triangle_to_TriMesh( T ) :
