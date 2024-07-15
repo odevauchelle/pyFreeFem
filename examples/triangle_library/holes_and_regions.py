@@ -22,10 +22,12 @@ for key in T.keys():
 print( T['segment_markers'] )
 
 tr.compare( plt, T_hole,T ) 
-savefig('hole.svg',bbox_inches = 'tight')
+# savefig('hole.svg',bbox_inches = 'tight')
 
 
-Th = pyff.triangle_to_TriMesh( T )
+Th = pyff.triangle_to_TriMesh( T_hole )
+
+Th = pyff.adaptmesh(Th, hmax = .2)
 
 figure()
 Th.plot_triangles( labels = 'label' )
@@ -38,7 +40,7 @@ print(Th.boundary_edges)
 axis('off')
 axis('equal')
 
-savefig('region.svg',bbox_inches = 'tight')
+# savefig('region.svg',bbox_inches = 'tight')
 
 
 show()
