@@ -34,6 +34,7 @@ for interior in shp_wkt.loads( boundaries['box'] ).interiors : # there is only o
 
 Ts['segment_markers'] = ( -arange( 1, 5 ) ).tolist()
 
+shrink_factor = .99
 
 for grain in boundaries['grains'] :
 
@@ -44,6 +45,8 @@ for grain in boundaries['grains'] :
     Ts['holes'] += [ [center.x, center.y] ]
 
     for point in grain.exterior.coords[:-1] :
+
+        point = center.x + shrink_factor*( point[0] - center.x ), center.y + shrink_factor*( point[1] - center.y )
         
         points += [ point ]
         vertex_index += 1
@@ -116,8 +119,9 @@ Th = pyff.adaptmesh( Th, hmax = .1 )
 
 script = pyff.InputScript( Th = 'mesh' )
 script += '''
-fespace Vh( Th, P1 );
+fespace Vh( Th, P2 );
 Vh u,v;
+Vh X = x, Y = y;
 '''
 script += pyff.VarfScript(
     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
@@ -125,22 +129,32 @@ script += pyff.VarfScript(
     bottom = 'int1d(Th,' + str( boundary_number['bottom'] ) + ')( u*v )'
     )
 
+script += pyff.OutputScript( X = 'vector', Y = 'vector' )
+
 epsilon = 1e-6
 
-for _ in range(1) :
+for _ in range(3) :
+
+    try :
+        Th = pyff.adaptmesh( Th, c, hmin = 0.02 )
+    except :
+        pass
+    
     FE_matrices = script.get_output( Th = Th )
     M = FE_matrices['stiffness'] - 1/epsilon*( FE_matrices['top'] + FE_matrices['bottom'] )
-    B = FE_matrices['top']@( Th.x*0 + 1 )
+    B = FE_matrices['top']@( FE_matrices['X']*0 + 1 )
     c = spsolve( M, B )
-    Th = pyff.adaptmesh( Th, c )
+
+p = pyff.get_projector( Th, 'P2', 'P1' )
 
 figure()
-tricontourf( Th, c )
+tricontourf( Th, p@c )
+tricontour( Th, p@c, colors = 'r', lw = .5, linestyles = '-' )
 
-Th.plot_triangles( color = 'grey', alpha = .3)#( labels = 'label' )
-Th.plot_boundaries()
+# Th.plot_triangles( color = 'w', alpha = .1, lw = .75)#( labels = 'label' )
+# Th.plot_boundaries( label = 'grains', color = 'grey' )
 # Th.plot_nodes( labels = 'label', color = 'tab:blue' )
-legend()
+# legend()
 
 axis('equal')
 axis('off')
