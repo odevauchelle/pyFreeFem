@@ -136,7 +136,7 @@ epsilon = 1e-6
 for _ in range(3) :
 
     try :
-        Th = pyff.adaptmesh( Th, c, hmin = 0.02 )
+        Th = pyff.adaptmesh( Th, c, hmin = 0.03 )
     except :
         pass
     
@@ -148,16 +148,29 @@ for _ in range(3) :
 p = pyff.get_projector( Th, 'P2', 'P1' )
 
 figure()
-tricontourf( Th, p@c )
-tricontour( Th, p@c, colors = 'r', lw = .5, linestyles = '-' )
+ax_c = gca()
+ax_c.tricontourf( Th, p@c )
+contours = ax_c.tricontour( Th, p@c, colors = 'r', linestyles = '-', linewidths = .75, levels = 30 )
+
+a = []
+for segments in contours.allsegs :
+    for segment in segments :
+        if len(segment) > 1 :
+            dx, dy = diff(segment, axis = 0).T
+            a += angle( 1j*dx - dy ).tolist()
+
+figure()
+ax_h = gca(polar = True)
+ax_h.hist( a )
+
 
 # Th.plot_triangles( color = 'w', alpha = .1, lw = .75)#( labels = 'label' )
 # Th.plot_boundaries( label = 'grains', color = 'grey' )
 # Th.plot_nodes( labels = 'label', color = 'tab:blue' )
 # legend()
 
-axis('equal')
-axis('off')
+ax_c.axis('equal')
+ax_c.axis('off')
 # # savefig( 'river.svg', bbox_inches = 'tight' )
 
 show()
