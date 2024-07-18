@@ -39,7 +39,7 @@ shrink_factor = .99
 for grain in boundaries['grains'] :
 
     points = []
-    
+
     grain = shp_wkt.loads( grain )
     center = grain.centroid
     Ts['holes'] += [ [center.x, center.y] ]
@@ -47,7 +47,7 @@ for grain in boundaries['grains'] :
     for point in grain.exterior.coords[:-1] :
 
         point = center.x + shrink_factor*( point[0] - center.x ), center.y + shrink_factor*( point[1] - center.y )
-        
+
         points += [ point ]
         vertex_index += 1
 
@@ -122,34 +122,48 @@ script += '''
 fespace Vh( Th, P2 );
 Vh u,v;
 Vh X = x, Y = y;
+
+fespace VhDiff( Th, P1 );
+VhDiff du;
 '''
 script += pyff.VarfScript(
     stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
     top = 'int1d(Th,' + str( boundary_number['top'] ) + ')( u*v )',
-    bottom = 'int1d(Th,' + str( boundary_number['bottom'] ) + ')( u*v )'
+    bottom = 'int1d(Th,' + str( boundary_number['bottom'] ) + ')( u*v )',
+    dx = 'int2d(Th)( dx(u)*v )',
+    dy = 'int2d(Th)( dy(u)*v )',
+    )
+
+script += pyff.VarfScript(
+    gramian = 'int2d(Th)( du*v )',
+    functions = ('du','v')
     )
 
 script += pyff.OutputScript( X = 'vector', Y = 'vector' )
 
 epsilon = 1e-6
 
-for _ in range(3) :
+for _ in range(1) :
 
     try :
         Th = pyff.adaptmesh( Th, c, hmin = 0.03 )
     except :
         pass
-    
+
     FE_matrices = script.get_output( Th = Th )
     M = FE_matrices['stiffness'] - 1/epsilon*( FE_matrices['top'] + FE_matrices['bottom'] )
     B = FE_matrices['top']@( FE_matrices['X']*0 + 1 )
     c = spsolve( M, B )
 
 p = pyff.get_projector( Th, 'P2', 'P1' )
+dxc = spsolve( FE_matrices['gramian'], FE_matrices['dx']@c )
+dyc = spsolve( FE_matrices['gramian'], FE_matrices['dy']@c )
+
 
 figure()
 ax_c = gca()
 ax_c.tricontourf( Th, p@c )
+ax_c.quiver( Th.x, Th.y, dxc, dyc, color = 'w'  )
 contours = ax_c.tricontour( Th, p@c, colors = 'r', linestyles = '-', linewidths = .75, levels = 30 )
 
 a = []
