@@ -179,3 +179,5 @@ Here is the result:
 - Compute the electric potential around a wire of [finite resistivity](./wire.md)
 
 - Create a [constrained triangulation](./triangle.md) with [`triangle`](https://rufat.be/triangle/index.html)
+
+- Compute the diffusion flow through a [pack of grains](./grains.md)
