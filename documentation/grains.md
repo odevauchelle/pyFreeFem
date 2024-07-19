@@ -225,7 +225,7 @@ For a sanity check:
 ax_c.quiver( *array(Xt).T, *gradient, color = 'w'  )
 ```
 
-More interestingly, we can compute the distribution of flow direction, weighted by the area of each triangle. We only consider the triangles that are surrounded by grains ($y<0.15$).
+More interestingly, we can compute the distribution of flow direction, weighted by the area of each triangle. We only consider the triangles that are surrounded by grains ($|y|<0.15$).
 
 ```python
 ax_h = gca()
