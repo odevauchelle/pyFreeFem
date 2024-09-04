@@ -10,8 +10,9 @@ sys.path.append('/home/olivier/git/pyFreeFem')
 
 import pyFreeFem as pyff
 
-R = 0.15
-H = .8
+R = 0.1
+H = .5
+bottom_slope = 0.4
 
 #########################
 #
@@ -32,7 +33,7 @@ points = dict(
     seepage_bottom = ( 0, 0 ),
     seepage_top = ( R, 0 ),
     divide_top = ( 1, 0 ),
-    divide_bottom = ( 1, -H  ),
+    divide_bottom = ( 1, -H + bottom_slope  ),
     river_bottom = ( 0, -H )
     )
 
@@ -138,8 +139,9 @@ for _ in range(6) :
     M = - FE_matrices['stiffness']
     B = Th.x*0
 
-    boundary_name = 'bottom' # dy/dn = 1
-    B += FE_matrices[boundary_name]*( Th.x*0 + 1 )
+    boundary_name = 'bottom'
+            # dy/dn = 1/sqrt( 1 + (dv/du)**2 )
+    B += FE_matrices[boundary_name]*( Th.x*0 + 1/sqrt( 1 + (bottom_slope)**2 ) )
 
     boundary_name = 'free_surface'
     B += -FE_matrices[boundary_name]*( Th.x*0 + 1 )/( 1 - R )
