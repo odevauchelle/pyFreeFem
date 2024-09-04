@@ -41,7 +41,7 @@ where $R$ is the recharge (rainfall) rate.
 We define the Zhukovsky map $f$:
 
 $$
-\omega = z - i \Phi
+\omega = u + i v = z - i \Phi
 $$
 
 The figure below shows our aquifer in the mapped space. We will solve the Laplace equation in this mathematical space (figure below). The boundary conditions are now:
@@ -58,7 +58,7 @@ There is still a free boundary in this problem: the bottom's location is unknown
 
 ## Linearized problem
 
-When the rainfal rate $R$ is small enough, our problem can be linearized. In the mathematical space, this translates into the bottom line remaining at $\mathrm{Im} \, \omega = - H$. In other words, we let the bottom lie where it is when $R=0$.
+When the rainfal rate $R$ is small enough, our problem can be linearized. In the mathematical space, this translates into the bottom line remaining at $\mathrm{Im} \omega = v = - H$. In other words, we let the bottom lie where it is when $R=0$.
 
 This approximation fixes the free boundary; it is therefore straightforward to solve it with finite elements. It will also prove the basis for a better approximation of the solution.
 

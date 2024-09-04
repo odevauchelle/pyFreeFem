@@ -172,6 +172,8 @@ Here is the result:
 
 - Compute [travel times](./travel_time.md) along stream lines
 
+- Solve a free-surface [groundwater](./free-surface_aquifer.md) flow
+
 - [Visous flow](./Poisson_in_wedge.md) in a sharp-cornered channel
 
 - Find the [discharge through a wire](./discharge_through_wire.md)
