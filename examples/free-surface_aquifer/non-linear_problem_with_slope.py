@@ -9,10 +9,10 @@ sys.path.append('/home/olivier/git/pyFreeFem')
 
 import pyFreeFem as pyff
 
-R = 0.2
-H = .3
-epsilon = 1e-8
-bottom_slope = 0.2
+H = .2
+epsilon = 1e-6
+bottom_slopes = linspace( 0, 0.4, 10 )
+Rs = linspace(1, 1, len(bottom_slopes))*0.2
 
 #########################
 #
@@ -22,7 +22,7 @@ bottom_slope = 0.2
 
 points = dict(
     seepage_bottom = ( 0, 0 ),
-    seepage_top = ( R, 0 ),
+    seepage_top = ( Rs[0], 0 ),
     divide_top = ( 1, 0 ),
     divide_bottom = ( 1, - H ),
     river_bottom = ( 0, -H )
@@ -54,9 +54,14 @@ script = pyff.InputScript( Th = 'mesh' )
 
 script += pyff.edpScript('fespace Vh( Th, P1 );')
 
-FE_matrices = dict( stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )' )
-
 boundary_name_to_int = Th.get_boundary_label_conversion()[0]
+
+FE_matrices = dict(
+    stiffness = 'int2d(Th)( dx(u)*dx(v) +  dy(u)*dy(v) )',
+    bottom_with_slope = 'int1d(Th,' + str( boundary_name_to_int[ 'bottom' ] ) + ')( u*v/sqrt( 1 + (N.x/N.y)^2 ) )'
+    )
+
+
 # print( Th.get_boundary_edges() )
 
 for boundary_name in Th.get_boundaries().keys() :
@@ -64,94 +69,114 @@ for boundary_name in Th.get_boundaries().keys() :
 
 script += pyff.VarfScript( **FE_matrices )
 
-for relax_i in range(5) :
+figure()
+ax_curr = gca()
 
-    try :
-        Th.y += - delta_v
-        del x
-    except :
-        pass
+for i_p, bottom_slope in enumerate( bottom_slopes ) :
+    
+    R = Rs[i_p]
 
-    for adapt_i in range(3) :
+    print( 'bottom_slope', bottom_slope )
+    print( 'R', R )
+
+    for relax_i in range( 20 ) :
+
+        print('relax_i', relax_i)
+        ax_curr.cla()
+        Th.plot_triangles( ax = ax_curr, linewidth = .5 )
+        ax_curr.plot( 0, 0, '.', color = 'tab:orange')
+        ax_curr.axis('equal')
+        pause(0.01)
 
         try :
-            Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), hmax = H/20, err = .5e-2 )
+            Th.y += - 0.01*delta_v
+            del x
         except :
-            Th = pyff.adaptmesh( Th, 1, hmax = H/5 )
+            pass
 
-        FE_matrices = script.get_output( Th = Th )
+        for adapt_i in range(4) :
 
-        #########################
+            try :
+                Th = pyff.adaptmesh( Th, x*y, iso = 1, err = 1e-3 )
+                # Th = pyff.adaptmesh( Th, ( x - Th.x )*( y - Th.y ), iso = 1 )
+            except :
+                Th = pyff.adaptmesh( Th, 1, hmax = H/5 )
+
+            FE_matrices = script.get_output( Th = Th )
+
+            #########################
+            #
+            # x
+            #
+            #########################
+
+            M = - FE_matrices['stiffness']
+            B = Th.x*0
+
+            boundary_name = 'seepage_face'
+            M += 1/epsilon*FE_matrices[boundary_name]
+
+            boundary_name = 'river_wall'
+            M += 1/epsilon*FE_matrices[boundary_name]
+
+            boundary_name = 'divide'
+            M += 1/epsilon*FE_matrices[boundary_name]
+            B += 1/epsilon*FE_matrices[boundary_name]*( Th.x*0 + 1 )
+
+            boundary_name = 'bottom' # x = u
+            M += 1/epsilon*FE_matrices[boundary_name]
+            B += 1/epsilon*FE_matrices[boundary_name]*( Th.x )
+
+            boundary_name = 'free_surface'
+            M += 1/epsilon*FE_matrices[boundary_name]
+            B += 1/epsilon*FE_matrices[boundary_name]*( Th.x - R )/( 1 - R )
+
+            x = spsolve( M, B )
+
+            #########################
+            #
+            # y
+            #
+            #########################
+
+            M = - FE_matrices['stiffness']
+            B = Th.x*0
+
+            # dy/dn = 1/sqrt( 1 + (dv/du)**2 )
+            B += FE_matrices['bottom_with_slope']*( Th.x*0 + 1 )
+
+            boundary_name = 'free_surface'
+            B += -FE_matrices[boundary_name]*( Th.x*0 + 1 )/( 1 - R )
+
+            y = spsolve( M, B )
+
+
+        #################
         #
-        # x
+        # find the origin
         #
-        #########################
+        ##################
+
+        y -= max( y[ Th.get_boundaries()['river_wall'][0] ] )
+
+        ################
+        #
+        # movemesh
+        #
+        ###############
 
         M = - FE_matrices['stiffness']
-        B = Th.x*0
-
-        boundary_name = 'seepage_face'
-        M += 1/epsilon*FE_matrices[boundary_name]
-
-        boundary_name = 'river_wall'
-        M += 1/epsilon*FE_matrices[boundary_name]
-
-        boundary_name = 'divide'
-        M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x*0 + 1 )
 
         boundary_name = 'bottom' # x = u
         M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x )
+        B += 1/epsilon*FE_matrices[boundary_name]*( y + H - bottom_slope*x )
 
-        boundary_name = 'free_surface'
-        M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x - R )/( 1 - R )
+        for boundary_name in ['free_surface', 'seepage_face' ] : # delta_v = 0
+            M += 1/epsilon*FE_matrices[boundary_name]
 
-        x = spsolve( M, B )
-
-        #########################
-        #
-        # y
-        #
-        #########################
-
-        M = - FE_matrices['stiffness']
-        B = Th.x*0
-
-        boundary_name = 'bottom' # dy/dn = 1/sqrt( 1 + (dv/du)**2 )
-        B += FE_matrices[boundary_name]*( Th.x*0 + 1/sqrt( 1 + (bottom_slope)**2 ) )
-
-        boundary_name = 'free_surface'
-        B += -FE_matrices[boundary_name]*( Th.x*0 + 1 )/( 1 - R )
-
-        y = spsolve( M, B )
+        delta_v = spsolve( M, B )
 
 
-    #################
-    #
-    # find the origin
-    #
-    ##################
-
-    y -= max( y[ Th.get_boundaries()['river_wall'][0] ] )
-
-    ################
-    #
-    # movemesh
-    #
-    ###############
-
-    M = - FE_matrices['stiffness']
-
-    boundary_name = 'bottom' # x = u
-    M += 1/epsilon*FE_matrices[boundary_name]
-    B += 1/epsilon*FE_matrices[boundary_name]*( y + H - bottom_slope*x )
-
-    for boundary_name in ['free_surface', 'seepage_face' ] : # delta_v = 0
-        M += 1/epsilon*FE_matrices[boundary_name]
-
-    delta_v = spsolve( M, B )
 
 ##########################
 #
