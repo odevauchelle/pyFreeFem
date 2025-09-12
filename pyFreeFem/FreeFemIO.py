@@ -39,6 +39,9 @@ from .FreeFemTools.edpTools import *
 
 default_sparse_matrix = csr_matrix
 
+def array1D_to_str( a ) :
+    return ' '.join( [ str(a) for a in a ] )
+
 def parse_FreeFem_output( FreeFem_str, flag ) :
 
     return FreeFem_str.split( flag + '\n' )[1]
@@ -194,19 +197,19 @@ def savemesh( mesh, filename ) :
     with open( filename, 'w' ) as the_file :
 
         # nv, nt, ne
-        the_file.write( str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] )[1:-1].replace(',',' ') + '\n' )
+        the_file.write( array1D_to_str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] ) + '\n' )
 
         # vertices
         for node_index in range( len( mesh.x ) ) :
-            the_file.write( str( mesh.x[node_index] ) + ' ' + str( mesh.y[node_index] ) + ' ' + str( mesh.node_labels[node_index] ) + '\n' )
+            the_file.write( array1D_to_str( [  mesh.x[node_index], mesh.y[node_index], mesh.node_labels[node_index] ] ) + '\n' )
 
         # triangles
         for tri_index, triangle in enumerate( mesh.triangles ) :
-            the_file.write( str( list( np.array( triangle ) + 1 ) )[1:-1].replace(',',' ') + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
+            the_file.write( array1D_to_str( np.array( triangle ) + 1 ) + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
 
         # edges
         for edge in mesh.get_boundary_edges() :
-            the_file.write( str( list( np.array( edge ) + np.array([ 1, 1, 0 ]) ) )[1:-1].replace(',',' ') + '\n' )
+            the_file.write( array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n' )
 
     return filename
 
