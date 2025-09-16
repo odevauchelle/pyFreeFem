@@ -97,8 +97,8 @@ for Th in ( Th, initial_Th) :
 
 fig_path = './../../figures/'
 
-for i in plt.get_fignums():
-    figure(i)
-    savefig(fig_path + __file__.split('/')[-1].split('.')[0] + '_' + str(i) + '.svg', bbox_inches = 'tight')
+# for i in plt.get_fignums():
+#     figure(i)
+#     savefig(fig_path + __file__.split('/')[-1].split('.')[0] + '_' + str(i) + '.svg', bbox_inches = 'tight')
 
 show()

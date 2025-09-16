@@ -189,29 +189,35 @@ def FreeFem_edge_to_boundary_edge( FreeFem_edge, triangles, flip_reversed_edges 
         node_index_in_triangle = triangles[triangle_index].tolist().index( start_node )
         return { ( triangle_index, node_index_in_triangle ) : label_integer  }
 
-def savemesh( mesh, filename ) :
+def savevector( vector, file ) :
+    '''
+    Saves a vector (array) in FreeFem++ format in a .ffv file.
+    '''
+    
+    file.write( '\n'.join( [ str(value) for value in vector ] ) + '\n' )
+
+
+def savemesh( mesh, file ) :
     '''
     Saves mesh in FreeFem++ format in a .msh file.
     '''
 
-    with open( filename, 'w' ) as the_file :
+    # nv, nt, ne
+    file.write( array1D_to_str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] ) + '\n' )
 
-        # nv, nt, ne
-        the_file.write( array1D_to_str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] ) + '\n' )
+    # vertices
+    for node_index in range( len( mesh.x ) ) :
+        file.write( array1D_to_str( [  mesh.x[node_index], mesh.y[node_index], mesh.node_labels[node_index] ] ) + '\n' ) # not efficient ! We should create the string before writing it.
 
-        # vertices
-        for node_index in range( len( mesh.x ) ) :
-            the_file.write( array1D_to_str( [  mesh.x[node_index], mesh.y[node_index], mesh.node_labels[node_index] ] ) + '\n' )
+    # triangles
+    for tri_index, triangle in enumerate( mesh.triangles ) :
+        file.write( array1D_to_str( np.array( triangle ) + 1 ) + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
 
-        # triangles
-        for tri_index, triangle in enumerate( mesh.triangles ) :
-            the_file.write( array1D_to_str( np.array( triangle ) + 1 ) + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
+    # edges
+    for edge in mesh.get_boundary_edges() :
+        file.write( array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n' )
 
-        # edges
-        for edge in mesh.get_boundary_edges() :
-            the_file.write( array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n' )
-
-    return filename
+    return file.name
 
 
 def loadstr( data_str, delimiter = None, dtype = 'float', skip_rows = 0 ) :

@@ -146,9 +146,9 @@ class edpInput :
         if self.type == 'mesh' :
 
             if self.tempfile is None :
-                self.tempfile = NamedTemporaryFile( suffix = '.msh' )
+                self.tempfile = NamedTemporaryFile( suffix = '.msh', buffering = 1, mode = 'w' )
 
-            savemesh( filename = self.tempfile.name, mesh = source )
+            savemesh( file = self.tempfile, mesh = source )
 
             if self.declare :
                 edp_str += 'mesh _Th_;\n'
@@ -164,9 +164,10 @@ class edpInput :
         elif self.type == 'vector' :
 
             if self.tempfile is None :
-                self.tempfile = NamedTemporaryFile( suffix = '.ffv' )
+                self.tempfile = NamedTemporaryFile( suffix = '.ffv', buffering = 1, mode = 'w' )
 
-            savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
+            # savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
+            savevector( vector = source, file = self.tempfile )
 
             if self.declare :
                 edp_str += '_VhU_ _vector_name_;\n'
@@ -376,22 +377,22 @@ class edpScript :
 
         return stdin
 
-    def clean_temp_files(self, verbose = False) :
+    # def clean_temp_files(self, verbose = False) :
 
-        for block in self.blocks :
+    #     for block in self.blocks :
 
-            for input in block.input :
+    #         for input in block.input :
 
-                if not input.tempfile is None :
+    #             if not input.tempfile is None :
 
-                    if verbose :
-                        print( 'Erasing temporary file ' + input.tempfile.name )
+    #                 if verbose :
+    #                     print( 'Erasing temporary file ' + input.tempfile.name )
 
-                    input.tempfile.close()
+    #                 input.tempfile.close()
 
     def run( self, verbose = False, **kwargs_input ) :
         freefem_output = run_FreeFem( self.get_edp( **kwargs_input ), stdin =  self.get_stdin( **kwargs_input ), verbose = verbose )
-        self.clean_temp_files()
+        # self.clean_temp_files()
         return freefem_output
 
     def parse( self, FreeFem_output ) :

@@ -881,7 +881,7 @@ def polygon_triangulate ( n, x, y ):
 #  EAR indicates whether the node and its immediate neighbors form an ear
 #  that can be sliced off immediately.
 #
-  ear = np.zeros ( n, dtype = np.bool )
+  ear = np.zeros ( n, dtype = bool )
   for i in range ( 0, n ):
     ear[i] = diagonal ( prev_node[i], next_node[i], n, prev_node, \
       next_node, x, y )

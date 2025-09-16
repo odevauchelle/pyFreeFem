@@ -66,6 +66,6 @@ for diffusion_type in ('classical','exotic') :
         axs[i+1].tricontourf( Th, real( eigenvectors[:,i] ) )
         axs[i+1].set_title( r'$\sigma=$' + str(-round(real(eigenvalues[i]),1)))
 
-    fig.savefig( diffusion_type + '_diffusion.svg', bbox_inches = 'tight' )
+    # fig.savefig( diffusion_type + '_diffusion.svg', bbox_inches = 'tight' )
 
 show()
