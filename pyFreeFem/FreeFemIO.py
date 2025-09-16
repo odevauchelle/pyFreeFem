@@ -202,20 +202,24 @@ def savemesh( mesh, file ) :
     Saves mesh in FreeFem++ format in a .msh file.
     '''
 
+    mesh_str = ''
+
     # nv, nt, ne
-    file.write( array1D_to_str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] ) + '\n' )
+    mesh_str += array1D_to_str( [ len( mesh.x), len( mesh.triangles ), len( mesh.boundary_edges ) ] ) + '\n'
 
     # vertices
     for node_index in range( len( mesh.x ) ) :
-        file.write( array1D_to_str( [  mesh.x[node_index], mesh.y[node_index], mesh.node_labels[node_index] ] ) + '\n' ) # not efficient ! We should create the string before writing it.
+        mesh_str += array1D_to_str( [  mesh.x[node_index], mesh.y[node_index], mesh.node_labels[node_index] ] ) + '\n'
 
     # triangles
     for tri_index, triangle in enumerate( mesh.triangles ) :
-        file.write( array1D_to_str( np.array( triangle ) + 1 ) + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n' )
+        mesh_str += array1D_to_str( np.array( triangle ) + 1 ) + ' ' + str( mesh.triangle_labels[tri_index] ) + '\n'
 
     # edges
     for edge in mesh.get_boundary_edges() :
-        file.write( array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n' )
+        mesh_str += array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n'
+
+    file.write( mesh_str )
 
     return file.name
 
