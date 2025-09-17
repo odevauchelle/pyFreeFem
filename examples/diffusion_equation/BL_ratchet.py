@@ -80,7 +80,7 @@ for diffusion_type in ('classical','exotic') :
 
     for i in range( len(axs) - 2 ) :
         axs[i+2].tricontourf( Th, p@real( eigenvectors[:,i] ) )
-        axs[i+2].set_title( r'$j\omega=$' + str( round( eigenvalues[i], 4 ) ) )
+        axs[i+2].set_title( r'$j\omega=$' + str( np.round( eigenvalues[i], 4 ) ) )
 
     # fig.savefig( diffusion_type + '_diffusion.svg', bbox_inches = 'tight' )
 

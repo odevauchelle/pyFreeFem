@@ -30,7 +30,6 @@ for mu in (.5, 1, 3):
 
     initial_Th = Th
 
-
     script = pyff.InputScript( Th = Th, err = err )
     script += '''
     fespace Vh( Th, P2 );

@@ -201,10 +201,10 @@ print('std angle:', sigma,  'deg')
 ax_c.axis('equal')
 ax_c.axis('off')
 
-fig_h.savefig( 'grains_histogram.svg', bbox_inches = 'tight' )
-fig_c.savefig( 'grains_field.svg', bbox_inches = 'tight' )
-fig_tri.savefig( 'grains_compare.svg', bbox_inches = 'tight' )
-fig_grains.savefig( 'grains_mesh.svg', bbox_inches = 'tight' )
+# fig_h.savefig( 'grains_histogram.svg', bbox_inches = 'tight' )
+# fig_c.savefig( 'grains_field.svg', bbox_inches = 'tight' )
+# fig_tri.savefig( 'grains_compare.svg', bbox_inches = 'tight' )
+# fig_grains.savefig( 'grains_mesh.svg', bbox_inches = 'tight' )
 
 
 show()

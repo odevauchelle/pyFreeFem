@@ -97,15 +97,16 @@ for relax_i in range(5) :
 
         boundary_name = 'divide'
         M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x*0 + 1 )
+        print(shape(FE_matrices[boundary_name]), shape(Th.x))
+        B += 1/epsilon*FE_matrices[boundary_name]@( Th.x*0 + 1 )
 
         boundary_name = 'bottom' # x = u
         M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x )
+        B += 1/epsilon*FE_matrices[boundary_name]@( Th.x )
 
         boundary_name = 'free_surface'
         M += 1/epsilon*FE_matrices[boundary_name]
-        B += 1/epsilon*FE_matrices[boundary_name]*( Th.x - R )/( 1 - R )
+        B += 1/epsilon*FE_matrices[boundary_name]@( Th.x - R )/( 1 - R )
 
         x = spsolve( M, B )
 

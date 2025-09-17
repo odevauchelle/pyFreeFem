@@ -37,6 +37,21 @@ from .meshTools.segments import triangle_edge_to_node_edge
 from .FreeFemTools.FreeFemStatics import *
 from .FreeFemTools.edpTools import *
 
+local_platform = system()
+
+memory_tempfile_dir = None
+
+if local_platform == 'Linux' :
+    memory_tempfile_dir = '/dev/shm/'
+
+try :
+    NamedTemporaryFile( mode = 'w', buffering = 1, dir = memory_tempfile_dir ).close()
+except :
+    print('Failed to open temporary file in', memory_tempfile_dir, ', switching to default.' )
+    memory_tempfile_dir = None # returns to default
+
+
+
 default_sparse_matrix = csr_matrix
 
 def array1D_to_str( a ) :
@@ -193,9 +208,11 @@ def savevector( vector, file ) :
     '''
     Saves a vector (array) in FreeFem++ format in a .ffv file.
     '''
-    
+    file.seek(0)
+    file.truncate()
     file.write( '\n'.join( [ str(value) for value in vector ] ) + '\n' )
-
+    
+    return file.name
 
 def savemesh( mesh, file ) :
     '''
@@ -219,6 +236,8 @@ def savemesh( mesh, file ) :
     for edge in mesh.get_boundary_edges() :
         mesh_str += array1D_to_str( np.array( edge ) + np.array([ 1, 1, 0 ]) ) + '\n'
 
+    file.seek(0)
+    file.truncate()
     file.write( mesh_str )
 
     return file.name
@@ -268,7 +287,7 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None 
     temporary_files = []
 
     if platform is None :
-        platform = system()
+        platform = local_platform
 
     if platform in [ 'Linux', 'Darwin' ] : # Linux or MacOS
 
@@ -276,6 +295,7 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None 
             edp_str = edp_str.replace( '"',  "\"'\"" )
             command = [ 'FreeFem++ -v 0 <( printf "' + edp_str + '" )' ]
             print_error_message = True # default
+        
         except :
             command = [ 'FreeFem++' ]
             print_error_message = False # to get FreeFem version as output
@@ -285,9 +305,9 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None 
     elif platform == 'Windows' : # write edp code in temporaryFaile from Stanisław Żukowski (Oct. 2020)
 
         try :
-            with NamedTemporaryFile( suffix = '.edp', mode = 'w', delete = False ) as edp_temp_file:
-                edp_temp_file.write( edp_str )
-                temporary_files += [edp_temp_file]
+            edp_temp_file = NamedTemporaryFile( suffix = '.edp', mode = 'w', buffering = 1, dir = memory_tempfile_dir ) # will be closed after running Freefem
+            edp_temp_file.write( edp_str )
+            temporary_files += [edp_temp_file]
 
             print_error_message = True  # default
             command = [ 'FreeFem++', '-v', '0', edp_temp_file.name ]
@@ -310,7 +330,6 @@ def run_FreeFem( edp_str = None, verbose = False, stdin = None, platform = None 
 
         for temporary_file in temporary_files :
             temporary_file.close()
-
 
         if not proc.returncode :
             if verbose :

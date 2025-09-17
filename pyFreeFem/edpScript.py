@@ -146,7 +146,7 @@ class edpInput :
         if self.type == 'mesh' :
 
             if self.tempfile is None :
-                self.tempfile = NamedTemporaryFile( suffix = '.msh', buffering = 1, mode = 'w' )
+                self.tempfile = NamedTemporaryFile( suffix = '.msh', buffering = 1, mode = 'w', dir = memory_tempfile_dir )
 
             savemesh( file = self.tempfile, mesh = source )
 
@@ -164,7 +164,7 @@ class edpInput :
         elif self.type == 'vector' :
 
             if self.tempfile is None :
-                self.tempfile = NamedTemporaryFile( suffix = '.ffv', buffering = 1, mode = 'w' )
+                self.tempfile = NamedTemporaryFile( suffix = '.ffv', buffering = 1, mode = 'w+', dir = memory_tempfile_dir )
 
             # savetxt( self.tempfile.name, source ) # using the file handle would be better, but then writing doesn't complete
             savevector( vector = source, file = self.tempfile )
@@ -377,18 +377,18 @@ class edpScript :
 
         return stdin
 
-    # def clean_temp_files(self, verbose = False) :
+    def clean_temp_files(self, verbose = False) :
 
-    #     for block in self.blocks :
+        for block in self.blocks :
 
-    #         for input in block.input :
+            for input in block.input :
 
-    #             if not input.tempfile is None :
+                if not input.tempfile is None :
 
-    #                 if verbose :
-    #                     print( 'Erasing temporary file ' + input.tempfile.name )
+                    if verbose :
+                        print( 'Erasing temporary file ' + input.tempfile.name )
 
-    #                 input.tempfile.close()
+                    input.tempfile.close()
 
     def run( self, verbose = False, **kwargs_input ) :
         freefem_output = run_FreeFem( self.get_edp( **kwargs_input ), stdin =  self.get_stdin( **kwargs_input ), verbose = verbose )
