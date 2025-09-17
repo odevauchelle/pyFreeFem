@@ -1,6 +1,9 @@
 import numpy
 import matplotlib as mpl
 import subprocess
+import platform
+import os
+
 
 import sys
 sys.path.append('./../')
@@ -8,6 +11,7 @@ sys.path.append('./../')
 import pyFreeFem as pyff
 
 versions = {
+    'Platform' : platform.system() + ' ' + platform.release() + ' ' + platform.freedesktop_os_release()['PRETTY_NAME'],
     'pyFreeFem' : pyff.__version__,
     'Python' : sys.version,
     'FreeFem++': pyff.get_FreeFem_version(),

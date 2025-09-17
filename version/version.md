@@ -3,19 +3,21 @@
 Latest test ran with:
 
 ```console
+> Platform:
+Linux 6.1.0-28-amd64 Debian GNU/Linux 12 (bookworm)
+
 > pyFreeFem:
 0.2
 
 > Python:
-3.7.3 (default, Jul 25 2020, 13:03:44) 
-[GCC 8.3.0]
+3.11.2 (main, Apr 28 2025, 14:11:48) [GCC 12.2.0]
 
 > FreeFem++:
-3.610001 (date Κυρ 06 Ιαν 2019 11:39:39 μμ EET) 64bits
+4.9 ( - git no git) 64bits
 
 > Numpy:
-1.16.2
+1.24.2
 
 > Matplotlib:
-3.0.2
+3.6.3
 ```
